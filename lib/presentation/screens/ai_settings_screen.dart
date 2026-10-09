@@ -268,15 +268,30 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                     ],
                   ),
                 ),
-                Chip(
-                  avatar: Icon(
-                    isLowTier ? Icons.speed : Icons.rocket_launch,
-                    size: 14,
-                    color: isLowTier ? Colors.amber : Colors.green,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isLowTier ? Colors.amber.withAlpha(30) : Colors.green.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  label: Text(
-                    isLowTier ? '4GB Tier' : 'High Tier',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isLowTier ? Icons.speed : Icons.rocket_launch,
+                        size: 13,
+                        color: isLowTier ? Colors.amber.shade700 : Colors.green,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isLowTier ? '4GB Tier' : 'High Tier',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isLowTier ? Colors.amber.shade700 : Colors.green,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -295,18 +310,22 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
             ),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Recommended: ${isLowTier ? "Qwen 1.7B (4K Context)" : "Phi-4-mini (8K Context)"}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Text(
+                    'Recommended: ${isLowTier ? "Qwen 1.7B (4K Context)" : "Phi-4-mini (8K Context)"}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 Text(
                   '${(ramRatio * 100).toInt()}% Used',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -398,18 +417,26 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                   ],
                 ),
               ] else if (exists) ...[
-                Row(
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    const Icon(Icons.check, size: 16, color: Colors.green),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Installed & Offline Ready',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check, size: 16, color: Colors.green),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Installed & Offline Ready',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.green,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const Spacer(),
                     OutlinedButton.icon(
                       onPressed: () => _deleteModel(model),
                       icon: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
