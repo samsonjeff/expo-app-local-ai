@@ -1,10 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/document.dart';
 import '../../models/job.dart';
 import '../../orchestration/document_parser.dart';
 import '../../providers/quiz_providers.dart';
+import '../widgets/generation_progress_dialog.dart';
+import '../widgets/motion_widgets.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
   const UploadDocumentScreen({super.key});
@@ -68,15 +71,17 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       await ref.read(documentsProvider.notifier).addDocument(doc);
 
       if (mounted) {
+        HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Uploaded "$fileName" (${doc.estimatedTokens} estimated tokens)!'),
+            content: Text('Uploaded "$fileName" (${doc.estimatedTokens} tokens)!'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error uploading document: $e'), backgroundColor: Colors.red),
         );
@@ -98,78 +103,129 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Generate Quiz from Document',
-                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Source: ${doc.fileName} (~${doc.estimatedTokens} tokens)',
-                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Questions to generate:'),
-                  DropdownButton<int>(
-                    value: questionCount,
-                    items: [3, 5, 10, 15]
-                        .map((c) => DropdownMenuItem(value: c, child: Text('$c questions')))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => questionCount = val);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Difficulty level:'),
-                  DropdownButton<String>(
-                    value: difficulty,
-                    items: ['easy', 'medium', 'hard']
-                        .map((d) => DropdownMenuItem(value: d, child: Text(d.toUpperCase())))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => difficulty = val);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.bolt),
-                  label: const Text('Start Offline Generation'),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _generateQuizFromDoc(doc, questionCount, difficulty);
-                  },
+        builder: (ctx, setModalState) {
+          final theme = Theme.of(ctx);
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 28,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 28,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.bolt, color: theme.colorScheme.onPrimaryContainer),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Generate Quiz from Document',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            doc.fileName,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ),
+                const SizedBox(height: 20),
+
+                // Question Count Pills
+                Text(
+                  'QUESTION COUNT',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [3, 5, 10].map((count) {
+                    final isSelected = questionCount == count;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text('$count Questions'),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          if (val) setModalState(() => questionCount = count);
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+
+                // Difficulty Selector
+                Text(
+                  'DIFFICULTY',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: ['easy', 'medium', 'hard'].map((diff) {
+                    final isSelected = difficulty == diff;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(diff.toUpperCase()),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          if (val) setModalState(() => difficulty = diff);
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.auto_awesome),
+                    label: const Text('Start Offline Generation', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _generateQuizFromDoc(doc, questionCount, difficulty);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -188,55 +244,15 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       questionTypes: ['multiple_choice', 'true_false', 'identification'],
     );
 
-    // Show progress dialog
     if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dlgCtx) => Consumer(
-        builder: (context, ref, _) {
-          final jobAsync = ref.watch(activeJobStreamProvider);
-          final currentJob = jobAsync.value;
-
-          return AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.memory, color: Colors.indigoAccent),
-                SizedBox(width: 10),
-                Text('Analyzing Document...'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LinearProgressIndicator(
-                  value: currentJob?.progress ?? 0.05,
-                  borderRadius: BorderRadius.circular(8),
-                  minHeight: 8,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  currentJob?.statusMessage ?? 'Processing document context...',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Stage: ${currentJob?.stage.label ?? "Starting"}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  queue.cancelJob(job.id);
-                  Navigator.pop(dlgCtx);
-                },
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
+      builder: (dlgCtx) => GenerationProgressDialog(
+        job: job,
+        onCancel: () {
+          queue.cancelJob(job.id);
+          Navigator.pop(dlgCtx);
         },
       ),
     );
@@ -245,20 +261,82 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       final quiz = await queue.runQuizGeneration(job);
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
+        HapticFeedback.mediumImpact();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!')),
+          SnackBar(
+            content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!'),
+            backgroundColor: Colors.green,
+          ),
         );
         ref.read(quizzesProvider.notifier).refresh();
-        Navigator.pop(context); // Return to home
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
+        HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Generation failed: $e'), backgroundColor: Colors.red),
         );
       }
     }
+  }
+
+  void _previewDocumentText(DocumentMetadata doc) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.95,
+        minChildSize: 0.4,
+        expand: false,
+        builder: (context, scrollCtrl) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                doc.fileName,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                '~${doc.estimatedTokens} estimated tokens • ${doc.characterCount} characters',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const Divider(height: 24),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollCtrl,
+                  child: Text(
+                    doc.extractedText.isNotEmpty
+                        ? doc.extractedText
+                        : 'No preview text available.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   IconData _iconForDocType(DocumentType type) {
@@ -291,40 +369,44 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final docsAsync = ref.watch(documentsProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Documents & Slides', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Knowledge Vault', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: Column(
         children: [
           // Upload Action Header Card
           Container(
-            margin: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.7),
-                  Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  theme.colorScheme.primaryContainer.withAlpha(140),
+                  theme.colorScheme.surfaceContainerLow,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                color: theme.colorScheme.primary.withAlpha(50),
               ),
             ),
             child: Column(
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                      child: Icon(Icons.upload_file, size: 28, color: Theme.of(context).colorScheme.primary),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withAlpha(25),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(Icons.upload_file, size: 28, color: theme.colorScheme.primary),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -332,13 +414,15 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Upload Study Material',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            'Import Study Documents',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Supports PDF, PPTX (PowerPoint), DOCX, TXT',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                            'Supports PDF, PPTX (PowerPoint slides), DOCX, TXT',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -347,16 +431,22 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (_isProcessing) ...[
-                  LinearProgressIndicator(borderRadius: BorderRadius.circular(8)),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: const LinearProgressIndicator(),
+                  ),
                   const SizedBox(height: 8),
-                  Text(_statusText ?? 'Processing...', style: const TextStyle(fontSize: 12, color: Colors.indigo)),
+                  Text(
+                    _statusText ?? 'Extracting text...',
+                    style: TextStyle(fontSize: 12, color: theme.colorScheme.primary),
+                  ),
                 ] else
                   SizedBox(
                     width: double.infinity,
-                    height: 46,
+                    height: 48,
                     child: FilledButton.icon(
                       icon: const Icon(Icons.file_open),
-                      label: const Text('Choose File from Device'),
+                      label: const Text('Choose File from Device', style: TextStyle(fontWeight: FontWeight.bold)),
                       onPressed: _pickAndProcessFile,
                     ),
                   ),
@@ -364,18 +454,27 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
             ),
           ),
 
-          // Uploaded Documents List Header
+          // Uploaded Documents Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Uploaded Documents',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  'UPLOADED DOCUMENTS',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.1,
+                  ),
                 ),
                 docsAsync.when(
-                  data: (docs) => Text('${docs.length} items', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  data: (docs) => Text(
+                    '${docs.length} Files',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                   loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
                 ),
@@ -392,52 +491,87 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.folder_open, size: 60, color: Colors.grey.shade400),
-                        const SizedBox(height: 12),
-                        const Text('No documents uploaded yet', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Icon(Icons.folder_open, size: 64, color: theme.colorScheme.outlineVariant),
+                        const SizedBox(height: 14),
+                        Text(
+                          'No documents uploaded yet',
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 4),
-                        const Text('Upload a PDF lecture note or PowerPoint slide to begin.', style: TextStyle(color: Colors.grey)),
+                        Text(
+                          'Upload a lecture PDF or slides to generate quizzes offline.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   itemCount: docs.length,
                   itemBuilder: (ctx, i) {
                     final doc = docs[i];
                     final color = _colorForDocType(doc.type);
                     final icon = _iconForDocType(doc.type);
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: color.withValues(alpha: 0.15),
-                          child: Icon(icon, color: color),
-                        ),
-                        title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                          '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • ~${doc.estimatedTokens} tokens',
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.bolt, color: Colors.indigoAccent),
-                              tooltip: 'Generate Quiz from this Document',
-                              onPressed: () => _showGenerateFromDocDialog(doc),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: TactilePressCard(
+                        onTap: () => _previewDocumentText(doc),
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: color.withAlpha(30),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Icon(icon, color: color, size: 24),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        doc.fileName,
+                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • ~${doc.estimatedTokens} tokens',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.bolt, color: theme.colorScheme.primary),
+                                  tooltip: 'Generate Quiz',
+                                  onPressed: () => _showGenerateFromDocDialog(doc),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  tooltip: 'Delete',
+                                  onPressed: () {
+                                    ref.read(documentsProvider.notifier).deleteDocument(doc.id);
+                                  },
+                                ),
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                              tooltip: 'Delete Document',
-                              onPressed: () {
-                                ref.read(documentsProvider.notifier).deleteDocument(doc.id);
-                              },
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     );

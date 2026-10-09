@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/attempt.dart';
 import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
+import '../widgets/motion_widgets.dart';
 import 'results_screen.dart';
 
 class QuizPlayScreen extends ConsumerStatefulWidget {
@@ -88,6 +90,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
     await attemptRepo.saveAttempt(attempt);
 
     if (!mounted) return;
+    HapticFeedback.mediumImpact();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -98,6 +101,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final questions = widget.quiz.questions;
     if (questions.isEmpty) {
       return Scaffold(
@@ -108,58 +112,117 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
 
     final q = questions[_currentIndex];
     final isLast = _currentIndex == questions.length - 1;
+    final progress = (_currentIndex + 1) / questions.length;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.quiz.title} (${_currentIndex + 1}/${questions.length})'),
+        title: Text(
+          widget.quiz.title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(6),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          ),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            LinearProgressIndicator(
-              value: (_currentIndex + 1) / questions.length,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              q.questionText,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            Expanded(
-              child: _buildAnswerInput(q),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (_currentIndex > 0)
-                  OutlinedButton(
-                    onPressed: () => setState(() => _currentIndex--),
-                    child: const Text('Previous'),
-                  )
-                else
-                  const SizedBox.shrink(),
-                FilledButton(
-                  onPressed: () {
-                    if (isLast) {
-                      _submitQuiz();
-                    } else {
-                      setState(() => _currentIndex++);
-                    }
-                  },
-                  child: Text(isLast ? 'Submit Quiz' : 'Next Question'),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Question Metadata Bar
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Chip(
+                    avatar: const Icon(Icons.help_outline, size: 14),
+                    label: Text(
+                      'QUESTION ${_currentIndex + 1} OF ${questions.length}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  ),
+                  Text(
+                    '${q.points} Point${q.points > 1 ? 's' : ''}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Question Stem
+              Text(
+                q.questionText,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  height: 1.35,
                 ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 20),
+
+              // Options / Answer Area
+              Expanded(
+                child: _buildAnswerInput(q),
+              ),
+
+              // Bottom Navigation Buttons
+              Row(
+                children: [
+                  if (_currentIndex > 0)
+                    Expanded(
+                      flex: 1,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _currentIndex--);
+                        },
+                        child: const Text('Previous'),
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  if (_currentIndex > 0) const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        if (isLast) {
+                          _submitQuiz();
+                        } else {
+                          setState(() => _currentIndex++);
+                        }
+                      },
+                      icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward, size: 18),
+                      label: Text(isLast ? 'Submit Quiz' : 'Next Question'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildAnswerInput(QuizQuestion q) {
+    final theme = Theme.of(context);
+
     if (q.questionType == QuestionType.multipleChoice || q.questionType == QuestionType.trueFalse) {
       return ListView.builder(
         itemCount: q.options.length,
@@ -167,33 +230,62 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
           final opt = q.options[i];
           final isSelected = _selectedOptionIds[q.id] == opt.id;
 
-          return Card(
-            elevation: isSelected ? 4 : 1,
-            color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: TactilePressCard(
               onTap: () {
                 setState(() {
                   _selectedOptionIds[q.id] = opt.id;
                 });
               },
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? theme.colorScheme.primaryContainer.withAlpha(120)
+                      : theme.colorScheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.outlineVariant.withAlpha(80),
+                    width: isSelected ? 1.5 : 1.0,
+                  ),
+                ),
                 child: Row(
                   children: [
-                    Icon(
-                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.outlineVariant,
+                          width: 2,
+                        ),
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check,
+                              size: 16,
+                              color: theme.colorScheme.onPrimary,
+                            )
+                          : null,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         opt.optionText,
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimaryContainer
+                              : theme.colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -214,11 +306,17 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             decoration: InputDecoration(
               labelText: 'Your Answer',
               hintText: 'Type your answer here...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              prefixIcon: const Icon(Icons.edit_note),
             ),
           ),
-          const SizedBox(height: 8),
-          const Text('Self-graded or auto-validated against acceptable terms.'),
+          const SizedBox(height: 12),
+          Text(
+            'This response will be validated automatically offline.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       );
     }
