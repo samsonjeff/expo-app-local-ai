@@ -201,23 +201,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildUploadHeroCard(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      elevation: 3,
-      shadowColor: theme.colorScheme.primary.withAlpha(60),
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.colorScheme.primary.withAlpha(80), width: 1.5),
+        side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
       ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
-              theme.colorScheme.primaryContainer.withAlpha(140),
-              theme.colorScheme.surface,
+              Color(0xFFEEF2FF),
+              Colors.white,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F4F46E5),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -320,9 +326,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Card(
       elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(120)),
+        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -358,8 +365,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                 counterText: '', // Hide default counter since we display live counter in header
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
+                ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerLowest,
+                fillColor: const Color(0xFFF8FAFC),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
               onChanged: (_) => setState(() {}),
@@ -399,10 +410,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      elevation: 1,
+      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(isDark ? 50 : 90)),
+        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),

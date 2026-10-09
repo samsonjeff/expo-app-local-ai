@@ -45,9 +45,15 @@ class ResultsScreen extends StatelessWidget {
           children: [
             // Score Summary Card
             Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              color: passed ? Colors.green.withAlpha(25) : Colors.amber.withAlpha(25),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(
+                  color: passed ? Colors.green.withAlpha(80) : Colors.amber.withAlpha(80),
+                  width: 1.5,
+                ),
+              ),
+              color: passed ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -172,11 +178,14 @@ class ResultsScreen extends StatelessWidget {
     final isCorrect = answer.isCorrect;
 
     return Card(
+      elevation: 0,
+      color: Colors.white,
       margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isCorrect ? Colors.green.withAlpha(80) : Colors.red.withAlpha(80),
+          width: 1.2,
         ),
       ),
       child: Padding(

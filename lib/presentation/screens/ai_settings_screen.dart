@@ -309,11 +309,11 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
               child: LinearProgressIndicator(
                 value: ramRatio.clamp(0.0, 1.0),
                 minHeight: 8,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+                backgroundColor: const Color(0xFFF1F5F9),
                 valueColor: AlwaysStoppedAnimation(
                   ramRatio > 0.85
-                      ? AppTheme.error
-                      : (ramRatio > 0.65 ? AppTheme.warning : theme.colorScheme.primary),
+                       ? AppTheme.error
+                       : (ramRatio > 0.65 ? AppTheme.warning : theme.colorScheme.primary),
                 ),
               ),
             ),
@@ -368,13 +368,13 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: exists
-                          ? Colors.green.withAlpha(30)
-                          : theme.colorScheme.surfaceContainerHighest,
+                          ? const Color(0xFFF0FDF4)
+                          : const Color(0xFFEEF2FF),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       exists ? Icons.check_circle : Icons.download_for_offline,
-                      color: exists ? Colors.green : theme.colorScheme.primary,
+                      color: exists ? AppTheme.success : theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(width: 14),

@@ -187,8 +187,12 @@ class _QuizConfigDialogState extends State<QuizConfigDialog> {
                     child: Icon(Icons.psychology_outlined),
                   ),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
+                  ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLowest,
+                  fillColor: const Color(0xFFF8FAFC),
                   contentPadding: const EdgeInsets.all(16),
                 ),
               ),

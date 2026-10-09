@@ -22,8 +22,11 @@ class GenerationProgressDialog extends ConsumerWidget {
     final currentJob = activeJobAsync.value ?? job;
 
     return Dialog(
-      backgroundColor: theme.colorScheme.surfaceContainerHigh,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
         child: Column(
@@ -66,7 +69,7 @@ class GenerationProgressDialog extends ConsumerWidget {
               child: LinearProgressIndicator(
                 value: currentJob.progress > 0 ? currentJob.progress : null,
                 minHeight: 8,
-                backgroundColor: theme.colorScheme.surfaceContainerLowest,
+                backgroundColor: const Color(0xFFF1F5F9),
               ),
             ),
             const SizedBox(height: 12),
@@ -99,9 +102,9 @@ class GenerationProgressDialog extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLowest,
+                color: const Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withAlpha(60)),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: Column(
                 children: [

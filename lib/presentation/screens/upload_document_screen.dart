@@ -185,18 +185,26 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.7),
-                  Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  Color(0xFFEEF2FF),
+                  Colors.white,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.primary.withAlpha(50),
+                width: 1.5,
               ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0F4F46E5),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -294,11 +302,13 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 1,
+                      elevation: 0,
+                      color: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                         side: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant.withAlpha(isDark ? 50 : 90),
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 1.2,
                         ),
                       ),
                       child: ListTile(

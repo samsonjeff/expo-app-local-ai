@@ -33,7 +33,7 @@ class LocalAiQuizApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Local AI Quiz App',
         debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.system,
+        themeMode: ThemeMode.light,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         home: const MainNavigationShell(),

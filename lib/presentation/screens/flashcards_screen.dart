@@ -67,7 +67,12 @@ class FlashcardsScreen extends ConsumerWidget {
             children: [
               // SRS Forecast Banner
               Card(
-                color: theme.colorScheme.primaryContainer,
+                elevation: 0,
+                color: const Color(0xFFEEF2FF),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -152,6 +157,12 @@ class FlashcardsScreen extends ConsumerWidget {
           );
         },
         child: Card(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Row(

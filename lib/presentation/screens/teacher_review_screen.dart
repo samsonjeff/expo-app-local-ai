@@ -387,10 +387,10 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
           // View Mode Control Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
               border: Border(
-                bottom: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(100)),
+                bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
               ),
             ),
             child: Wrap(
@@ -477,10 +477,11 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 1,
+      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
+        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -511,7 +512,7 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
+                          color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(

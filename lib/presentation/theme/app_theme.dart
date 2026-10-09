@@ -24,9 +24,9 @@ class AppTheme {
   static const Color infoDark = Color(0xFF3B82F6);
 
   // Surface Neutral Tones (Anti-Glare & High Readability)
-  static const Color bgLight = Color(0xFFF8FAFC);       // Slate 50 (Glare-free off-white)
+  static const Color bgLight = Color(0xFFFFFFFF);       // Crisp Pure White Canvas
   static const Color bgDark = Color(0xFF0B0F19);        // Deep Obsidian Slate
-  static const Color cardLight = Color(0xFFFFFFFF);     // Pure White Surface
+  static const Color cardLight = Color(0xFFFFFFFF);     // Pure White Elevated Surface
   static const Color cardDark = Color(0xFF151B2B);      // Obsidian Elevated Surface
 
   // ---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ class AppTheme {
   }
 
   // ---------------------------------------------------------------------------
-  // Light Theme
+  // Light Theme (Clean Pure White Aesthetic)
   // ---------------------------------------------------------------------------
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
@@ -98,42 +98,46 @@ class AppTheme {
     ).copyWith(
       primary: primarySeed,
       onPrimary: Colors.white,
-      primaryContainer: const Color(0xFFE0E7FF),
-      onPrimaryContainer: const Color(0xFF312E81),
+      primaryContainer: const Color(0xFFEEF2FF), // Indigo 50
+      onPrimaryContainer: const Color(0xFF3730A3), // Indigo 800
       secondary: secondarySeed,
       onSecondary: Colors.white,
-      secondaryContainer: const Color(0xFFEDE9FE),
-      onSecondaryContainer: const Color(0xFF4C1D95),
+      secondaryContainer: const Color(0xFFF5F3FF), // Violet 50
+      onSecondaryContainer: const Color(0xFF5B21B6), // Violet 800
       tertiary: tertiarySeed,
       onTertiary: Colors.white,
-      tertiaryContainer: const Color(0xFFCCFBF1),
-      onTertiaryContainer: const Color(0xFF115E59),
-      surface: bgLight,
-      onSurface: const Color(0xFF0F172A),
-      surfaceContainerLowest: cardLight,
-      surfaceContainerLow: const Color(0xFFF1F5F9),
-      surfaceContainer: const Color(0xFFE2E8F0),
-      surfaceContainerHigh: const Color(0xFFCBD5E1),
-      surfaceContainerHighest: const Color(0xFF94A3B8),
-      outline: const Color(0xFF94A3B8),
-      outlineVariant: const Color(0xFFE2E8F0),
+      tertiaryContainer: const Color(0xFFF0FDFA), // Teal 50
+      onTertiaryContainer: const Color(0xFF115E59), // Teal 800
+      surface: const Color(0xFFFFFFFF), // Pure White
+      onSurface: const Color(0xFF0F172A), // Slate 900
+      onSurfaceVariant: const Color(0xFF475569), // Slate 600
+      surfaceContainerLowest: const Color(0xFFFFFFFF), // Pure White Card
+      surfaceContainerLow: const Color(0xFFF8FAFC), // Slate 50
+      surfaceContainer: const Color(0xFFF1F5F9), // Slate 100
+      surfaceContainerHigh: const Color(0xFFE2E8F0), // Slate 200
+      surfaceContainerHighest: const Color(0xFFCBD5E1), // Slate 300
+      outline: const Color(0xFF94A3B8), // Slate 400
+      outlineVariant: const Color(0xFFE2E8F0), // Slate 200 (crisp card border)
       error: error,
-      errorContainer: const Color(0xFFFEE2E2),
-      onErrorContainer: const Color(0xFF7F1D1D),
+      errorContainer: const Color(0xFFFEF2F2), // Red 50
+      onErrorContainer: const Color(0xFF991B1B), // Red 800
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: colorScheme.surface,
-      appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surface,
-        foregroundColor: colorScheme.onSurface,
+      scaffoldBackgroundColor: const Color(0xFFFFFFFF), // Pure White background
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Color(0xFFFFFFFF),
+        foregroundColor: Color(0xFF0F172A),
         elevation: 0,
         scrolledUnderElevation: 0.5,
+        surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: Color(0xFF0F172A)),
+        actionsIconTheme: IconThemeData(color: Color(0xFF0F172A)),
+        titleTextStyle: TextStyle(
           color: Color(0xFF0F172A),
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -141,14 +145,17 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: colorScheme.surfaceContainerLowest,
+        color: const Color(0xFFFFFFFF),
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: colorScheme.outlineVariant.withAlpha(120), width: 1),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: primarySeed,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -157,38 +164,90 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          foregroundColor: primarySeed,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          side: BorderSide(color: colorScheme.outlineVariant),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerLowest,
+        fillColor: const Color(0xFFF8FAFC),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: colorScheme.outlineVariant),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          borderSide: const BorderSide(color: primarySeed, width: 2),
         ),
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
       ),
       chipTheme: ChipThemeData(
+        backgroundColor: const Color(0xFFF1F5F9),
+        labelStyle: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         side: BorderSide.none,
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primarySeed,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        backgroundColor: colorScheme.surface,
-        indicatorColor: colorScheme.primaryContainer,
+        backgroundColor: const Color(0xFFFFFFFF),
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: const Color(0xFFEEF2FF),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: primarySeed);
+          }
+          return const IconThemeData(color: Color(0xFF64748B));
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: primarySeed,
+            );
+          }
+          return const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF64748B),
+          );
+        }),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: const Color(0xFFFFFFFF),
+        surfaceTintColor: Colors.transparent,
+        elevation: 6,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Color(0xFFFFFFFF),
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: Color(0xFFFFFFFF),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFFE2E8F0),
+        thickness: 1,
       ),
     );
   }
