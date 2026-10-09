@@ -45,5 +45,6 @@ Run `flutter analyze` and `flutter test` before declaring tasks complete.
 ## Memory & Native Safety Rules
 
 - **Zero UI-Thread Parsing**: Never parse large PDFs or validate large JSON schemas on the main UI isolate. Spawn a worker isolate (`Isolate.run` or `compute`).
-- **RAM Lifecycle**: On 4GB–6GB devices, ensure model weights are unloaded immediately after generation finishes or fails.
+- **RAM Lifecycle (4GB–8GB Devices)**: Strictly adhere to `.agents/skills/ram-budget-management/SKILL.md`. On 4GB devices, enforce 1.7B parameter models (e.g. Qwen 1.7B) and cap context to 4096 tokens. On 6GB–8GB devices, allow up to 3.8B models (e.g. Phi-4-mini) with 8192 tokens. Always unload model weights immediately in `finally` blocks upon completion or failure.
 - **Dual-Mode Bridge**: Provide a mock fallback engine for fast UI development on machines or platforms lacking native C++ GGUF runtimes.
+

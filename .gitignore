@@ -36,7 +36,6 @@ ephemeral/
 # Environment & local agent customizations
 .env*.local
 *.pem
-.agents/
 inst_user_settings.tmp
 # Local SDK
 flutter_sdk/
