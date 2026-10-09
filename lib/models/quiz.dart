@@ -147,16 +147,39 @@ class QuizQuestion {
     final typeStr = (json['questionType'] ?? json['type'] ?? 'multiple_choice').toString();
     final parsedType = QuestionType.fromString(typeStr);
 
+    final rawAcceptable = json['acceptableAnswers'] as List<dynamic>? ?? [];
+    final parsedAcceptable = rawAcceptable.map((e) => e.toString().trim()).toList();
+
     final rawOptions = json['options'] as List<dynamic>? ?? [];
     final parsedOptions = <QuizOption>[];
     for (int i = 0; i < rawOptions.length; i++) {
-      if (rawOptions[i] is Map<String, dynamic>) {
-        parsedOptions.add(QuizOption.fromJson(rawOptions[i] as Map<String, dynamic>, index: i));
+      final optRaw = rawOptions[i];
+      if (optRaw is Map<String, dynamic>) {
+        parsedOptions.add(QuizOption.fromJson(optRaw, index: i));
+      } else if (optRaw is String && optRaw.trim().isNotEmpty) {
+        final optStr = optRaw.trim();
+        parsedOptions.add(QuizOption(
+          optionText: optStr,
+          isCorrect: parsedAcceptable.any((a) => a.toLowerCase() == optStr.toLowerCase()),
+          orderIndex: i,
+        ));
       }
     }
 
-    final rawAcceptable = json['acceptableAnswers'] as List<dynamic>? ?? [];
-    final parsedAcceptable = rawAcceptable.map((e) => e.toString().trim()).toList();
+    if (parsedType == QuestionType.trueFalse && parsedOptions.isEmpty) {
+      final isTrue = parsedAcceptable.any((a) => a.toLowerCase() == 'true') ||
+          (json['correctAnswer'] ?? json['answer'] ?? '').toString().toLowerCase().contains('true');
+      parsedOptions.add(QuizOption(
+        optionText: 'True',
+        isCorrect: isTrue,
+        orderIndex: 0,
+      ));
+      parsedOptions.add(QuizOption(
+        optionText: 'False',
+        isCorrect: !isTrue,
+        orderIndex: 1,
+      ));
+    }
 
     return QuizQuestion(
       id: json['id'] as String?,
