@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/quiz.dart';
+import '../theme/app_theme.dart';
 import '../widgets/motion_widgets.dart';
 
 class FlashcardStudyScreen extends StatefulWidget {
@@ -165,7 +166,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Again',
                               interval: '<10m',
-                              color: Colors.red,
+                              color: AppTheme.forSrsGrade(1),
                               onTap: () => _gradeCard(1),
                             ),
                           ),
@@ -175,7 +176,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Hard',
                               interval: '1d',
-                              color: Colors.amber.shade700,
+                              color: AppTheme.forSrsGrade(2),
                               onTap: () => _gradeCard(2),
                             ),
                           ),
@@ -185,7 +186,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Good',
                               interval: '3d',
-                              color: Colors.green,
+                              color: AppTheme.forSrsGrade(3),
                               onTap: () => _gradeCard(3),
                             ),
                           ),
@@ -195,7 +196,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Easy',
                               interval: '7d',
-                              color: Colors.blue,
+                              color: AppTheme.forSrsGrade(4),
                               onTap: () => _gradeCard(4),
                             ),
                           ),
@@ -223,16 +224,14 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
 
     return Card(
       elevation: 0,
-      color: isFront
-          ? theme.colorScheme.surfaceContainerHigh
-          : theme.colorScheme.primaryContainer.withAlpha(50),
+      color: isFront ? Colors.white : const Color(0xFFF5F3FF),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
           color: isFront
-              ? theme.colorScheme.outlineVariant.withAlpha(80)
+              ? const Color(0xFFE2E8F0)
               : theme.colorScheme.primary.withAlpha(120),
-          width: isFront ? 1 : 1.5,
+          width: isFront ? 1.2 : 1.5,
         ),
       ),
       child: Container(
@@ -246,7 +245,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
               children: [
                 Chip(
                   backgroundColor: isFront
-                      ? theme.colorScheme.surfaceContainerHighest
+                      ? const Color(0xFFF1F5F9)
                       : theme.colorScheme.primaryContainer,
                   label: Text(
                     badge,
@@ -255,7 +254,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.8,
                       color: isFront
-                          ? theme.colorScheme.onSurfaceVariant
+                          ? const Color(0xFF475569)
                           : theme.colorScheme.onPrimaryContainer,
                     ),
                   ),

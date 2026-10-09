@@ -472,17 +472,18 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             final isSelected = _selectedOptionIds[q.id] == opt.id;
 
             return Card(
-              elevation: isSelected ? 3 : 0,
-              color: isSelected ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerLowest,
+              elevation: isSelected ? 2 : 0,
+              color: isSelected ? const Color(0xFFEEF2FF) : Colors.white,
               margin: const EdgeInsets.only(bottom: 10),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 side: BorderSide(
-                  color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant.withAlpha(80),
+                  color: isSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                  width: isSelected ? 1.5 : 1.2,
                 ),
               ),
               child: InkWell(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 onTap: () => setState(() => _selectedOptionIds[q.id] = opt.id),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
@@ -490,13 +491,13 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: isSelected ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
+                        backgroundColor: isSelected ? theme.colorScheme.primary : const Color(0xFFF1F5F9),
                         child: Text(
                           prefix,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
                           ),
                         ),
                       ),
@@ -527,10 +528,14 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
           children: [
             Expanded(
               child: Card(
-                color: selected == trueOpt?.id ? theme.colorScheme.primaryContainer : null,
+                elevation: selected == trueOpt?.id ? 2 : 0,
+                color: selected == trueOpt?.id ? const Color(0xFFEEF2FF) : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: selected == trueOpt?.id ? theme.colorScheme.primary : Colors.grey.shade300),
+                  side: BorderSide(
+                    color: selected == trueOpt?.id ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                    width: selected == trueOpt?.id ? 1.5 : 1.2,
+                  ),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
@@ -549,10 +554,14 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: Card(
-                color: selected == falseOpt?.id ? theme.colorScheme.primaryContainer : null,
+                elevation: selected == falseOpt?.id ? 2 : 0,
+                color: selected == falseOpt?.id ? const Color(0xFFEEF2FF) : Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: selected == falseOpt?.id ? theme.colorScheme.primary : Colors.grey.shade300),
+                  side: BorderSide(
+                    color: selected == falseOpt?.id ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                    width: selected == falseOpt?.id ? 1.5 : 1.2,
+                  ),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),

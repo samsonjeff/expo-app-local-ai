@@ -4,6 +4,7 @@ import '../../models/job.dart';
 import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'flashcard_review_screen.dart';
@@ -65,17 +66,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Navigator.pop(context); // Dismiss progress dialog
         ref.read(quizzesProvider.notifier).refresh();
 
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!'),
-            action: SnackBarAction(
-              label: 'Review & Edit',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => TeacherReviewScreen(quiz: quiz)),
-                );
-              },
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Generated "${quiz.title}" (${quiz.totalQuestions} items)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -83,8 +92,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Generation failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 3),
+            content: Text('Generation failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
@@ -200,23 +216,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildUploadHeroCard(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      elevation: 3,
-      shadowColor: theme.colorScheme.primary.withAlpha(60),
+      elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.colorScheme.primary.withAlpha(80), width: 1.5),
+        side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
       ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
-              theme.colorScheme.primaryContainer.withAlpha(140),
-              theme.colorScheme.surface,
+              Color(0xFFEEF2FF),
+              Colors.white,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0F4F46E5),
+              blurRadius: 12,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -319,9 +341,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Card(
       elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(120)),
+        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -357,8 +380,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                 counterText: '', // Hide default counter since we display live counter in header
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
+                ),
                 filled: true,
-                fillColor: theme.colorScheme.surfaceContainerLowest,
+                fillColor: const Color(0xFFF8FAFC),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
               onChanged: (_) => setState(() {}),
@@ -391,12 +418,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final isExam = quiz.assessmentMode == AssessmentMode.exam;
 
+    final isDark = theme.brightness == Brightness.dark;
+    final modeColor = AppTheme.forAssessmentMode(isExam, isDark: isDark);
+    final diffColor = AppTheme.forDifficulty(quiz.difficulty.value, isDark: isDark);
+    final passColor = AppTheme.forPassingScore(quiz.passingScore, isDark: isDark);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      elevation: 2,
+      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
+        side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -417,8 +450,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isExam ? Colors.deepPurple.withAlpha(35) : Colors.indigo.withAlpha(35),
+                          color: modeColor.withAlpha(35),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: modeColor.withAlpha(60), width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -426,7 +460,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Icon(
                               isExam ? Icons.school : Icons.quiz,
                               size: 14,
-                              color: isExam ? Colors.deepPurple : Colors.indigo,
+                              color: modeColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -434,7 +468,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isExam ? Colors.deepPurple : Colors.indigo,
+                                color: modeColor,
                               ),
                             ),
                           ],
@@ -445,12 +479,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
+                          color: diffColor.withAlpha(30),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: diffColor.withAlpha(55), width: 1),
                         ),
-                        child: Text(
-                          quiz.difficulty.label,
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              quiz.difficulty == QuizDifficulty.easy
+                                  ? Icons.signal_cellular_alt_1_bar
+                                  : (quiz.difficulty == QuizDifficulty.medium
+                                      ? Icons.signal_cellular_alt_2_bar
+                                      : Icons.signal_cellular_alt),
+                              size: 13,
+                              color: diffColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              quiz.difficulty.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: diffColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
@@ -458,12 +512,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.green.withAlpha(30),
+                          color: passColor.withAlpha(30),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: passColor.withAlpha(55), width: 1),
                         ),
-                        child: Text(
-                          'Pass: ${quiz.passingScore}%',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade700),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              quiz.passingScore >= 75 ? Icons.verified_outlined : Icons.flag_outlined,
+                              size: 13,
+                              color: passColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Pass: ${quiz.passingScore}%',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: passColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -567,39 +637,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showExportDialog(Quiz quiz) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Export & Print: ${quiz.title}',
-              style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.description_outlined, color: Colors.blueAccent),
-              title: const Text('Student Test Paper (Questions Only)'),
-              subtitle: const Text('Formatted for students with blank answer spaces.'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await QuizExportService.exportAndShare(quiz, includeAnswerKey: false);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.key_outlined, color: Colors.green),
-              title: const Text('Teacher Key & Rubric (Questions & Answers)'),
-              subtitle: const Text('Includes complete answer key, explanations, and essay rubrics.'),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await QuizExportService.exportAndShare(quiz, includeAnswerKey: true);
-              },
-            ),
-          ],
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                'Export & Print: ${quiz.title}',
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.description_outlined, color: Colors.blueAccent),
+                title: const Text('Student Test Paper (Questions Only)'),
+                subtitle: const Text('Formatted for students with blank answer spaces.'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await QuizExportService.exportAndShare(quiz, includeAnswerKey: false);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.key_outlined, color: Colors.green),
+                title: const Text('Teacher Key & Rubric (Questions & Answers)'),
+                subtitle: const Text('Includes complete answer key, explanations, and essay rubrics.'),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await QuizExportService.exportAndShare(quiz, includeAnswerKey: true);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -608,80 +692,99 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showStudentModeSheet(Quiz quiz) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              quiz.title,
-              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Select assessment study mode:',
-              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Colors.blueAccent,
-                child: Icon(Icons.school, color: Colors.white),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              title: const Text('Mock Exam', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: Text('Full examination test with timer. Passing threshold: ${quiz.passingScore}%.'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: false)),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Colors.green,
-                child: Icon(Icons.lightbulb, color: Colors.white),
+              Text(
+                quiz.title,
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              title: const Text('Practice Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Instant answer verification & offline local AI explanations.'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: true)),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Colors.purple,
-                child: Icon(Icons.style, color: Colors.white),
+              const SizedBox(height: 6),
+              Text(
+                'Select assessment study mode:',
+                style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant),
               ),
-              title: const Text('Flashcard Review', style: TextStyle(fontWeight: FontWeight.bold)),
-              subtitle: const Text('Spaced repetition flip card study session for memory retention.'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
-                );
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.blueAccent,
+                  child: Icon(Icons.school, color: Colors.white),
+                ),
+                title: const Text('Mock Exam', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text('Full examination test with timer. Passing threshold: ${quiz.passingScore}%.'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: false)),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.lightbulb, color: Colors.white),
+                ),
+                title: const Text('Practice Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Instant answer verification & offline local AI explanations.'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: true)),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                leading: const CircleAvatar(
+                  backgroundColor: Colors.purple,
+                  child: Icon(Icons.style, color: Colors.white),
+                ),
+                title: const Text('Flashcard Review', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Spaced repetition flip card study session for memory retention.'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -5,9 +5,9 @@ import '../../models/document.dart';
 import '../../models/job.dart';
 import '../../orchestration/document_parser.dart';
 import '../../providers/quiz_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
-import 'teacher_review_screen.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
   const UploadDocumentScreen({super.key});
@@ -125,17 +125,25 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
         Navigator.pop(context); // Dismiss progress dialog
         ref.read(quizzesProvider.notifier).refresh();
 
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!'),
-            action: SnackBarAction(
-              label: 'Review & Edit',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => TeacherReviewScreen(quiz: quiz)),
-                );
-              },
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Generated "${quiz.title}" (${quiz.totalQuestions} items)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -144,8 +152,15 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Generation failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 3),
+            content: Text('Generation failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -165,18 +180,8 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     }
   }
 
-  Color _colorForDocType(DocumentType type) {
-    switch (type) {
-      case DocumentType.pdf:
-        return Colors.redAccent;
-      case DocumentType.pptx:
-        return Colors.orangeAccent;
-      case DocumentType.docx:
-        return Colors.blueAccent;
-      case DocumentType.txt:
-      case DocumentType.md:
-        return Colors.teal;
-    }
+  Color _colorForDocType(DocumentType type, bool isDark) {
+    return AppTheme.forDocType(type.name, isDark: isDark);
   }
 
   @override
@@ -194,18 +199,26 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.7),
-                  Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  Color(0xFFEEF2FF),
+                  Colors.white,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                color: Theme.of(context).colorScheme.primary.withAlpha(50),
+                width: 1.5,
               ),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0F4F46E5),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               children: [
@@ -297,26 +310,43 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                   itemCount: docs.length,
                   itemBuilder: (ctx, i) {
                     final doc = docs[i];
-                    final color = _colorForDocType(doc.type);
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final color = _colorForDocType(doc.type, isDark);
                     final icon = _iconForDocType(doc.type);
 
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 0,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 1.2,
+                        ),
+                      ),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: color.withValues(alpha: 0.15),
+                          backgroundColor: color.withAlpha(30),
                           child: Icon(icon, color: color),
                         ),
                         title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • Ready for Generation',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton.filledTonal(
-                              icon: const Icon(Icons.play_arrow_rounded, color: Colors.indigoAccent, size: 22),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                foregroundColor: Theme.of(context).colorScheme.primary,
+                              ),
+                              icon: const Icon(Icons.play_arrow_rounded, size: 24),
                               tooltip: 'Start Quiz Generation',
                               onPressed: () => _showGenerateFromDocDialog(doc),
                             ),

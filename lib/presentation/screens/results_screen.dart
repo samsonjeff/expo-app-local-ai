@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/attempt.dart';
 import '../../models/quiz.dart';
+import '../theme/app_theme.dart';
 import 'flashcard_review_screen.dart';
 import 'quiz_play_screen.dart';
 
@@ -17,6 +18,7 @@ class ResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final passingThreshold = quiz.passingScore.toDouble();
     final passed = attempt.percentage >= passingThreshold;
 
@@ -43,9 +45,15 @@ class ResultsScreen extends StatelessWidget {
           children: [
             // Score Summary Card
             Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              color: passed ? Colors.green.withAlpha(25) : Colors.amber.withAlpha(25),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+                side: BorderSide(
+                  color: passed ? Colors.green.withAlpha(80) : Colors.amber.withAlpha(80),
+                  width: 1.5,
+                ),
+              ),
+              color: passed ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -53,7 +61,9 @@ class ResultsScreen extends StatelessWidget {
                     Icon(
                       passed ? Icons.emoji_events : Icons.refresh,
                       size: 64,
-                      color: passed ? Colors.green.shade600 : Colors.amber.shade700,
+                      color: passed
+                          ? (isDark ? AppTheme.successDark : AppTheme.success)
+                          : (isDark ? AppTheme.warningDark : AppTheme.warning),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -74,7 +84,9 @@ class ResultsScreen extends StatelessWidget {
                       '${attempt.score} / ${attempt.totalPossibleScore} Points (${attempt.percentage.toStringAsFixed(1)}%)',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: passed ? Colors.green.shade700 : Colors.amber.shade900,
+                        color: passed
+                            ? (isDark ? AppTheme.successDark : AppTheme.success)
+                            : (isDark ? AppTheme.warningDark : AppTheme.warning),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -166,11 +178,14 @@ class ResultsScreen extends StatelessWidget {
     final isCorrect = answer.isCorrect;
 
     return Card(
+      elevation: 0,
+      color: Colors.white,
       margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
           color: isCorrect ? Colors.green.withAlpha(80) : Colors.red.withAlpha(80),
+          width: 1.2,
         ),
       ),
       child: Padding(

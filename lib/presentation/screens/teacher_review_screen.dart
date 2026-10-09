@@ -66,53 +66,67 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
   void _showExportModal() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Theme.of(ctx).colorScheme.primaryContainer,
-                  child: Icon(Icons.print_outlined, color: Theme.of(ctx).colorScheme.primary),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Export & Print Assessment',
-                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+      builder: (ctx) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.description_outlined, color: Colors.blueAccent),
-              title: const Text('Student Test Paper (Questions Only)'),
-              subtitle: const Text('Formatted for student test taking with blank spaces & answer options.'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await QuizExportService.exportAndShare(_currentQuiz, includeAnswerKey: false);
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.key_outlined, color: Colors.green),
-              title: const Text('Teacher Key & Rubric (Questions & Answers)'),
-              subtitle: const Text('Reveals all answers, explanations, and essay grading rubrics.'),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                await QuizExportService.exportAndShare(_currentQuiz, includeAnswerKey: true);
-              },
-            ),
-          ],
+              ),
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Theme.of(ctx).colorScheme.primaryContainer,
+                    child: Icon(Icons.print_outlined, color: Theme.of(ctx).colorScheme.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Export & Print Assessment',
+                      style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.description_outlined, color: Colors.blueAccent),
+                title: const Text('Student Test Paper (Questions Only)'),
+                subtitle: const Text('Formatted for student test taking with blank spaces & answer options.'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await QuizExportService.exportAndShare(_currentQuiz, includeAnswerKey: false);
+                },
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                leading: const Icon(Icons.key_outlined, color: Colors.green),
+                title: const Text('Teacher Key & Rubric (Questions & Answers)'),
+                subtitle: const Text('Reveals all answers, explanations, and essay grading rubrics.'),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await QuizExportService.exportAndShare(_currentQuiz, includeAnswerKey: true);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -387,10 +401,10 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
           // View Mode Control Header
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
               border: Border(
-                bottom: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(100)),
+                bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1),
               ),
             ),
             child: Wrap(
@@ -477,10 +491,11 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      elevation: 1,
+      elevation: 0,
+      color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
+        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -511,7 +526,7 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
+                          color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
