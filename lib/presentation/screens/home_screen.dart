@@ -6,6 +6,7 @@ import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
+import '../widgets/motion_widgets.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'flashcard_review_screen.dart';
 import 'quiz_play_screen.dart';
@@ -117,7 +118,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Local AI Quiz App', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/MaQui-light-mode.png',
+              height: 26,
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => const Icon(Icons.school, size: 22, color: Color(0xFF4F46E5)),
+            ),
+            const SizedBox(width: 8),
+            Text('MaQui', style: AppTheme.appNameStyle(fontSize: 20)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.upload_file),
@@ -197,7 +210,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               )
             else
-              ...quizzes.map((quiz) => _buildQuizCard(context, quiz)),
+              ...quizzes.asMap().entries.map(
+                    (entry) => _buildAnimatedQuizCard(context, entry.value, entry.key),
+                  ),
 
             const SizedBox(height: 60), // Spacing for extended FAB
           ],
@@ -213,14 +228,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildAnimatedQuizCard(BuildContext context, Quiz quiz, int index) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(quiz.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: (320 + (index * 50)).clamp(320, 700)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 18 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: _buildQuizCard(context, quiz),
+    );
+  }
+
   Widget _buildUploadHeroCard(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
-      ),
+    return TactilePressCard(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
+        );
+      },
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
+        ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -332,8 +373,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildPasteTextCard(BuildContext context) {
     final theme = Theme.of(context);
