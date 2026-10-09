@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
+import '../widgets/motion_widgets.dart';
 
 enum TeacherViewMode {
   questionOnly('Question Only'),
@@ -477,10 +478,14 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addNewQuestion,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Question'),
+      floatingActionButton: TactilePressCard(
+        borderRadius: BorderRadius.circular(16),
+        onTap: _addNewQuestion,
+        child: FloatingActionButton.extended(
+          onPressed: _addNewQuestion,
+          icon: const Icon(Icons.add),
+          label: const Text('Add Question'),
+        ),
       ),
     );
   }
@@ -489,92 +494,105 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
     final theme = Theme.of(context);
     final showAnswerKey = _viewMode == TeacherViewMode.questionAndAnswer;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(q.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: (280 + (index * 45)).clamp(280, 650)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 16 * (1.0 - value)),
+          child: child,
+        ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Question Header
-            Row(
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 12,
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        child: Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.2),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Question Header
+              Row(
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 12,
+                          backgroundColor: theme.colorScheme.primaryContainer,
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.primary,
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            q.questionType.label,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                          ),
                         ),
-                        child: Text(
-                          q.questionType.label,
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                        Text(
+                          '${q.points} pt${q.points > 1 ? "s" : ""}',
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
                         ),
-                      ),
-                      Text(
-                        '${q.points} pt${q.points > 1 ? "s" : ""}',
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, size: 20),
-                  tooltip: 'Edit Item',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _showEditQuestionDialog(q, index),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
-                  tooltip: 'Delete Item',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () => _deleteQuestion(index),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Question Text
-            Text(
-              q.questionText,
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 14),
-
-            // Options / Answering Area
-            _buildOptionsOrAnsweringArea(q, showAnswerKey),
-
-            // Answer Key & Rationale (Revealed when Question & Answer is active)
-            if (showAnswerKey) ...[
-              const SizedBox(height: 14),
-              const Divider(height: 1),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    tooltip: 'Edit Item',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _showEditQuestionDialog(q, index),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
+                    tooltip: 'Delete Item',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => _deleteQuestion(index),
+                  ),
+                ],
+              ),
               const SizedBox(height: 12),
-              _buildAnswerKeySection(q),
+
+              // Question Text
+              Text(
+                q.questionText,
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 14),
+
+              // Options / Answering Area
+              _buildOptionsOrAnsweringArea(q, showAnswerKey),
+
+              // Answer Key & Rationale (Revealed when Question & Answer is active)
+              if (showAnswerKey) ...[
+                const SizedBox(height: 14),
+                const Divider(height: 1),
+                const SizedBox(height: 12),
+                _buildAnswerKeySection(q),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
