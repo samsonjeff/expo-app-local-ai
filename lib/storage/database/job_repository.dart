@@ -8,24 +8,31 @@ class JobRepository {
 
   Future<void> saveJob(GenerationJob job) async {
     final db = await _db;
+    final map = <String, dynamic>{
+      'id': job.id,
+      'document_id': job.documentId,
+      'topic': job.topic,
+      'question_count': job.questionCount,
+      'difficulty': job.difficulty,
+      'question_types_json': jsonEncode(job.questionTypes),
+      'status': job.status.value,
+      'stage': job.stage.name,
+      'progress': job.progress,
+      'status_message': job.statusMessage,
+      'result_quiz_id': job.resultQuizId,
+      'error_message': job.errorMessage,
+      'created_at': job.createdAt.toIso8601String(),
+      'completed_at': job.completedAt?.toIso8601String(),
+    };
+
+    try {
+      map['assessment_mode'] = job.assessmentMode;
+      map['passing_score'] = job.passingScore;
+    } catch (_) {}
+
     await db.insert(
       'generation_jobs',
-      {
-        'id': job.id,
-        'document_id': job.documentId,
-        'topic': job.topic,
-        'question_count': job.questionCount,
-        'difficulty': job.difficulty,
-        'question_types_json': jsonEncode(job.questionTypes),
-        'status': job.status.value,
-        'stage': job.stage.name,
-        'progress': job.progress,
-        'status_message': job.statusMessage,
-        'result_quiz_id': job.resultQuizId,
-        'error_message': job.errorMessage,
-        'created_at': job.createdAt.toIso8601String(),
-        'completed_at': job.completedAt?.toIso8601String(),
-      },
+      map,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -53,6 +60,8 @@ class JobRepository {
       topic: row['topic'] as String?,
       questionCount: row['question_count'] as int? ?? 10,
       difficulty: row['difficulty'] as String? ?? 'medium',
+      assessmentMode: (row['assessment_mode'] ?? 'quiz').toString(),
+      passingScore: (row['passing_score'] as num?)?.toInt() ?? 70,
       questionTypes: typesList,
       status: JobStatus.values.firstWhere(
         (s) => s.value == row['status'],

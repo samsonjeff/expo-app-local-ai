@@ -42,6 +42,8 @@ void main() {
           description TEXT DEFAULT '',
           category TEXT DEFAULT 'General',
           difficulty TEXT DEFAULT 'medium',
+          assessment_mode TEXT DEFAULT 'quiz',
+          passing_score INTEGER DEFAULT 70,
           source_document_id TEXT,
           created_at TEXT NOT NULL,
           updated_at TEXT NOT NULL
@@ -114,6 +116,8 @@ void main() {
       final quiz = Quiz(
         title: 'Operating Systems',
         category: 'Computer Science',
+        assessmentMode: AssessmentMode.exam,
+        passingScore: 85,
         questions: [
           QuizQuestion(
             questionText: 'What is a deadlock?',
@@ -131,6 +135,8 @@ void main() {
       final fetched = await quizRepo.getQuizById(quiz.id);
       expect(fetched, isNotNull);
       expect(fetched!.title, equals('Operating Systems'));
+      expect(fetched.assessmentMode, equals(AssessmentMode.exam));
+      expect(fetched.passingScore, equals(85));
       expect(fetched.questions.length, equals(1));
       expect(fetched.questions.first.options.length, equals(2));
       expect(fetched.questions.first.options.first.isCorrect, isTrue);

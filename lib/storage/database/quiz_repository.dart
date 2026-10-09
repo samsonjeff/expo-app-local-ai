@@ -10,18 +10,26 @@ class QuizRepository {
     final db = await _db;
     await db.transaction((txn) async {
       // 1. Insert or update quiz
+      final quizMap = <String, dynamic>{
+        'id': quiz.id,
+        'title': quiz.title,
+        'description': quiz.description,
+        'category': quiz.category,
+        'difficulty': quiz.difficulty.value,
+        'source_document_id': quiz.sourceDocumentId,
+        'created_at': quiz.createdAt.toIso8601String(),
+        'updated_at': quiz.updatedAt.toIso8601String(),
+      };
+
+      // Guard columns in case running on old schema or isolated test DB
+      try {
+        quizMap['assessment_mode'] = quiz.assessmentMode.value;
+        quizMap['passing_score'] = quiz.passingScore;
+      } catch (_) {}
+
       await txn.insert(
         'quizzes',
-        {
-          'id': quiz.id,
-          'title': quiz.title,
-          'description': quiz.description,
-          'category': quiz.category,
-          'difficulty': quiz.difficulty.value,
-          'source_document_id': quiz.sourceDocumentId,
-          'created_at': quiz.createdAt.toIso8601String(),
-          'updated_at': quiz.updatedAt.toIso8601String(),
-        },
+        quizMap,
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
@@ -70,6 +78,8 @@ class QuizRepository {
       description: qRow['description'] as String? ?? '',
       category: qRow['category'] as String? ?? 'General',
       difficulty: QuizDifficulty.fromString(qRow['difficulty'] as String? ?? 'medium'),
+      assessmentMode: AssessmentMode.fromString(qRow['assessment_mode'] as String? ?? 'quiz'),
+      passingScore: (qRow['passing_score'] as num?)?.toInt() ?? 70,
       sourceDocumentId: qRow['source_document_id'] as String?,
       createdAt: DateTime.parse(qRow['created_at'] as String),
       updatedAt: DateTime.parse(qRow['updated_at'] as String),
@@ -136,6 +146,8 @@ class QuizRepository {
         description: row['description'] as String? ?? '',
         category: row['category'] as String? ?? 'General',
         difficulty: QuizDifficulty.fromString(row['difficulty'] as String? ?? 'medium'),
+        assessmentMode: AssessmentMode.fromString(row['assessment_mode'] as String? ?? 'quiz'),
+        passingScore: (row['passing_score'] as num?)?.toInt() ?? 70,
         sourceDocumentId: row['source_document_id'] as String?,
         createdAt: DateTime.parse(row['created_at'] as String),
         updatedAt: DateTime.parse(row['updated_at'] as String),

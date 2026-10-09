@@ -1,4 +1,5 @@
 import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 import '../models/document.dart';
 
 class DocumentChunker {
@@ -10,6 +11,13 @@ class DocumentChunker {
     int maxChunkChars = defaultMaxChunkChars,
     int overlapChars = defaultOverlapChars,
   }) async {
+    if (kIsWeb) {
+      return chunkText(
+        fullText,
+        maxChunkChars: maxChunkChars,
+        overlapChars: overlapChars,
+      );
+    }
     return await Isolate.run(() {
       return chunkText(
         fullText,

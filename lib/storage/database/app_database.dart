@@ -4,7 +4,7 @@ import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
   static const String dbName = 'quiz_app_local_ai.db';
-  static const int dbVersion = 1;
+  static const int dbVersion = 2;
 
   static Database? _database;
 
@@ -37,7 +37,28 @@ class AppDatabase {
       onCreate: (db, version) async {
         await _createTables(db);
       },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        await _migrate(db);
+      },
+      onOpen: (db) async {
+        await _migrate(db);
+      },
     );
+  }
+
+  static Future<void> _migrate(Database db) async {
+    try {
+      await db.execute("ALTER TABLE quizzes ADD COLUMN assessment_mode TEXT DEFAULT 'quiz'");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE quizzes ADD COLUMN passing_score INTEGER DEFAULT 70");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE generation_jobs ADD COLUMN assessment_mode TEXT DEFAULT 'quiz'");
+    } catch (_) {}
+    try {
+      await db.execute("ALTER TABLE generation_jobs ADD COLUMN passing_score INTEGER DEFAULT 70");
+    } catch (_) {}
   }
 
   static Future<void> _createTables(Database db) async {
@@ -64,6 +85,8 @@ class AppDatabase {
         description TEXT DEFAULT '',
         category TEXT DEFAULT 'General',
         difficulty TEXT DEFAULT 'medium',
+        assessment_mode TEXT DEFAULT 'quiz',
+        passing_score INTEGER DEFAULT 70,
         source_document_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
@@ -137,6 +160,8 @@ class AppDatabase {
         topic TEXT,
         question_count INTEGER DEFAULT 10,
         difficulty TEXT DEFAULT 'medium',
+        assessment_mode TEXT DEFAULT 'quiz',
+        passing_score INTEGER DEFAULT 70,
         question_types_json TEXT DEFAULT '[]',
         status TEXT NOT NULL,
         stage TEXT NOT NULL,

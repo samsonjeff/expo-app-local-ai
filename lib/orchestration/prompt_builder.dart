@@ -7,6 +7,8 @@ class PromptBuilder {
     int questionCount = 5,
     String difficulty = 'medium',
     List<String> questionTypes = const ['multiple_choice'],
+    String assessmentMode = 'quiz',
+    int passingScore = 70,
   }) {
     final typesStr = questionTypes.join(', ');
     final contextText = (content != null && content.trim().isNotEmpty)
@@ -18,8 +20,10 @@ class PromptBuilder {
 INSTRUCTIONS FOR THIS GENERATION TASK:
 1. Target Question Count: $questionCount
 2. Target Difficulty Level: $difficulty
-3. Allowed Question Types: [$typesStr]
-4. Base all questions strictly on the context below.
+3. Assessment Mode: ${assessmentMode.toUpperCase()}
+4. Passing Score Threshold: $passingScore%
+5. Allowed Question Types: [$typesStr]
+6. Base all questions strictly on the context below.
 
 $contextText
 

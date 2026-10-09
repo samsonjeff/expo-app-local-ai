@@ -29,6 +29,8 @@ class JsonValidator {
   static Quiz validateAndNormalizeQuiz(
     String rawLlmOutput, {
     String? sourceDocumentId,
+    AssessmentMode? assessmentMode,
+    int? passingScore,
   }) {
     final repairedJson = cleanAndRepairJsonString(rawLlmOutput);
 
@@ -52,10 +54,18 @@ class JsonValidator {
       throw const FormatException('Generated JSON does not contain any questions');
     }
 
-    final quiz = Quiz.fromJson({
-      ...parsed,
-      'sourceDocumentId': sourceDocumentId,
-    });
+    final map = Map<String, dynamic>.from(parsed);
+    if (sourceDocumentId != null) {
+      map['sourceDocumentId'] = sourceDocumentId;
+    }
+    if (assessmentMode != null) {
+      map['assessmentMode'] = assessmentMode.value;
+    }
+    if (passingScore != null) {
+      map['passingScore'] = passingScore;
+    }
+
+    final quiz = Quiz.fromJson(map);
 
     return quiz;
   }

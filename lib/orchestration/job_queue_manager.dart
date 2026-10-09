@@ -112,6 +112,8 @@ class JobQueueManager {
         questionCount: currentJob.questionCount,
         difficulty: currentJob.difficulty,
         questionTypes: currentJob.questionTypes,
+        assessmentMode: currentJob.assessmentMode,
+        passingScore: currentJob.passingScore,
       );
 
       // 5. Inference Execution with strict RAM lifecycle management
@@ -166,6 +168,8 @@ class JobQueueManager {
       final quiz = JsonValidator.validateAndNormalizeQuiz(
         rawOutputBuffer.toString(),
         sourceDocumentId: currentJob.documentId,
+        assessmentMode: AssessmentMode.fromString(currentJob.assessmentMode),
+        passingScore: currentJob.passingScore,
       );
 
       // 8. Saving Quiz
