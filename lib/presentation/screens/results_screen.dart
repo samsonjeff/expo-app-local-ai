@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/attempt.dart';
 import '../../models/quiz.dart';
 import '../theme/app_theme.dart';
+import '../widgets/motion_widgets.dart';
 import 'flashcard_review_screen.dart';
 import 'quiz_play_screen.dart';
 
@@ -43,89 +44,133 @@ class ResultsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Score Summary Card
-            Card(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: BorderSide(
-                  color: passed ? Colors.green.withAlpha(80) : Colors.amber.withAlpha(80),
-                  width: 1.5,
-                ),
+            // Score Summary Card with Spring Pop
+            TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.85, end: 1.0),
+              duration: const Duration(milliseconds: 550),
+              curve: Curves.easeOutBack,
+              builder: (context, scale, child) => Transform.scale(
+                scale: scale,
+                child: child,
               ),
-              color: passed ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(
-                      passed ? Icons.emoji_events : Icons.refresh,
-                      size: 64,
-                      color: passed
-                          ? (isDark ? AppTheme.successDark : AppTheme.success)
-                          : (isDark ? AppTheme.warningDark : AppTheme.warning),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      passed ? 'Assessment Passed!' : 'Need More Practice',
-                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Passing Score Requirement: ${quiz.passingScore}%',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.onSurfaceVariant,
+              child: Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(
+                    color: passed ? Colors.green.withAlpha(80) : Colors.amber.withAlpha(80),
+                    width: 1.5,
+                  ),
+                ),
+                color: passed ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 650),
+                        curve: Curves.elasticOut,
+                        builder: (context, iconScale, child) => Transform.scale(
+                          scale: iconScale,
+                          child: child,
+                        ),
+                        child: Icon(
+                          passed ? Icons.emoji_events : Icons.refresh,
+                          size: 64,
+                          color: passed
+                              ? (isDark ? AppTheme.successDark : AppTheme.success)
+                              : (isDark ? AppTheme.warningDark : AppTheme.warning),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${attempt.score} / ${attempt.totalPossibleScore} Points (${attempt.percentage.toStringAsFixed(1)}%)',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: passed
-                            ? (isDark ? AppTheme.successDark : AppTheme.success)
-                            : (isDark ? AppTheme.warningDark : AppTheme.warning),
+                      const SizedBox(height: 12),
+                      Text(
+                        passed ? 'Assessment Passed!' : 'Need More Practice',
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Time Spent: ${attempt.timeSpentSeconds ~/ 60}m ${attempt.timeSpentSeconds % 60}s',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        'Passing Score Requirement: ${quiz.passingScore}%',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: attempt.percentage),
+                        duration: const Duration(milliseconds: 850),
+                        curve: Curves.easeOutCubic,
+                        builder: (context, animPct, _) {
+                          final animScore = (animPct / 100 * attempt.totalPossibleScore).round();
+                          return Text(
+                            '$animScore / ${attempt.totalPossibleScore} Points (${animPct.toStringAsFixed(1)}%)',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: passed
+                                  ? (isDark ? AppTheme.successDark : AppTheme.success)
+                                  : (isDark ? AppTheme.warningDark : AppTheme.warning),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Time Spent: ${attempt.timeSpentSeconds ~/ 60}m ${attempt.timeSpentSeconds % 60}s',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // Quick Action Buttons
+            // Quick Action Buttons with Tactile Feedback
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.style_outlined),
-                    label: const Text('Flashcards'),
-                    onPressed: () {
+                  child: TactilePressCard(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
                       );
                     },
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.style_outlined),
+                      label: const Text('Flashcards'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
+                        );
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.replay),
-                    label: const Text('Retake'),
-                    onPressed: () {
+                  child: TactilePressCard(
+                    borderRadius: BorderRadius.circular(24),
+                    onTap: () {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz)),
                       );
                     },
+                    child: FilledButton.icon(
+                      icon: const Icon(Icons.replay),
+                      label: const Text('Retake'),
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz)),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -161,10 +206,14 @@ class ResultsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            FilledButton.tonalIcon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.home),
-              label: const Text('Return to Home'),
+            TactilePressCard(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () => Navigator.pop(context),
+              child: FilledButton.tonalIcon(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.home),
+                label: const Text('Return to Home'),
+              ),
             ),
             const SizedBox(height: 16),
           ],
@@ -177,111 +226,124 @@ class ResultsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final isCorrect = answer.isCorrect;
 
-    return Card(
-      elevation: 0,
-      color: Colors.white,
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isCorrect ? Colors.green.withAlpha(80) : Colors.red.withAlpha(80),
-          width: 1.2,
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(q.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: (280 + (index * 50)).clamp(280, 700)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 16 * (1.0 - value)),
+          child: child,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Question Header
-            Row(
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      Icon(
-                        isCorrect ? Icons.check_circle : Icons.cancel,
-                        color: isCorrect ? Colors.green : Colors.red,
-                        size: 20,
-                      ),
-                      Text(
-                        'Question ${index + 1}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(6),
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        margin: const EdgeInsets.only(bottom: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: isCorrect ? Colors.green.withAlpha(80) : Colors.red.withAlpha(80),
+            width: 1.2,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Question Header
+              Row(
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Icon(
+                          isCorrect ? Icons.check_circle : Icons.cancel,
+                          color: isCorrect ? Colors.green : Colors.red,
+                          size: 20,
                         ),
-                        child: Text(q.questionType.label, style: const TextStyle(fontSize: 10)),
+                        Text(
+                          'Question ${index + 1}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(q.questionType.label, style: const TextStyle(fontSize: 10)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${answer.earnedPoints} / ${q.points} pt',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isCorrect ? Colors.green : Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Question Text
+              Text(
+                q.questionText,
+                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+
+              // Student Answer Display
+              _buildAnswerComparison(q, answer),
+
+              // AI Explanation / Rubric Key
+              if (q.explanation.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.psychology, size: 16, color: Colors.indigo),
+                          const SizedBox(width: 6),
+                          Text(
+                            q.questionType == QuestionType.essay
+                                ? 'AI Rubric Key & Model Criteria'
+                                : 'Local AI Concept Explanation',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.indigo,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        q.explanation,
+                        style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant, height: 1.35),
                       ),
                     ],
                   ),
                 ),
-                Text(
-                  '${answer.earnedPoints} / ${q.points} pt',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isCorrect ? Colors.green : Colors.red,
-                  ),
-                ),
               ],
-            ),
-            const SizedBox(height: 10),
-
-            // Question Text
-            Text(
-              q.questionText,
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-
-            // Student Answer Display
-            _buildAnswerComparison(q, answer),
-
-            // AI Explanation / Rubric Key
-            if (q.explanation.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.psychology, size: 16, color: Colors.indigo),
-                        const SizedBox(width: 6),
-                        Text(
-                          q.questionType == QuestionType.essay
-                              ? 'AI Rubric Key & Model Criteria'
-                              : 'Local AI Concept Explanation',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.indigo,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      q.explanation,
-                      style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant, height: 1.35),
-                    ),
-                  ],
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );
