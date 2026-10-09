@@ -67,6 +67,10 @@ class JsonValidator {
 
     final quiz = Quiz.fromJson(map);
 
+    if (quiz.questions.isEmpty) {
+      throw const FormatException('Generated JSON does not contain any valid unique questions');
+    }
+
     return quiz;
   }
 }

@@ -210,10 +210,67 @@ class Quiz {
   })  : id = id ?? const Uuid().v4(),
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now(),
-        questions = questions ?? const [];
+        questions = questions != null ? deduplicateQuestions(questions) : const [];
 
   int get totalQuestions => questions.length;
   int get totalPoints => questions.fold(0, (sum, q) => sum + q.points);
+
+  /// Normalizes question text for robust uniqueness and idempotency checks.
+  static String normalizeText(String text) {
+    var s = text.trim().toLowerCase();
+    // Strip leading question numbers e.g. "1.", "1)", "q1:", "question 1:", etc.
+    s = s.replaceAll(RegExp(r'^(?:q(?:uestion)?\s*\d+[\s.:)\-]+|\d+[\s.:)\-]+)\s*'), '');
+    // Collapse any sequence of whitespace or newlines into a single space
+    s = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+    // Strip trailing punctuation like ?, !, .
+    s = s.replaceAll(RegExp(r'[?.!]+$'), '').trim();
+    return s;
+  }
+
+  /// Deduplicates options within a question by normalized optionText.
+  static List<QuizOption> deduplicateOptions(List<QuizOption> options) {
+    if (options.isEmpty) return const [];
+    final seen = <String>{};
+    final unique = <QuizOption>[];
+    for (final opt in options) {
+      final normalized = opt.optionText.trim().toLowerCase();
+      if (normalized.isNotEmpty && seen.contains(normalized)) {
+        continue;
+      }
+      if (normalized.isNotEmpty) seen.add(normalized);
+      unique.add(opt.copyWith(orderIndex: unique.length));
+    }
+    return unique;
+  }
+
+  /// Deduplicates questions preserving original sequence, re-indexing orderIndex,
+  /// and guaranteeing no question is repeated twice.
+  static List<QuizQuestion> deduplicateQuestions(List<QuizQuestion> questions) {
+    if (questions.isEmpty) return const [];
+    final seenTexts = <String>{};
+    final seenIds = <String>{};
+    final unique = <QuizQuestion>[];
+
+    for (final q in questions) {
+      final normalized = normalizeText(q.questionText);
+      final id = q.id;
+
+      // Skip duplicate IDs or duplicate normalized question texts
+      if (seenIds.contains(id) || (normalized.isNotEmpty && seenTexts.contains(normalized))) {
+        continue;
+      }
+
+      if (id.isNotEmpty) seenIds.add(id);
+      if (normalized.isNotEmpty) seenTexts.add(normalized);
+
+      unique.add(q.copyWith(
+        orderIndex: unique.length,
+        options: deduplicateOptions(q.options),
+      ));
+    }
+
+    return unique;
+  }
 
   Quiz copyWith({
     String? id,
@@ -239,7 +296,7 @@ class Quiz {
       sourceDocumentId: sourceDocumentId ?? this.sourceDocumentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      questions: questions ?? this.questions,
+      questions: questions != null ? deduplicateQuestions(questions) : this.questions,
     );
   }
 
@@ -267,7 +324,7 @@ class Quiz {
       updatedAt: json['updatedAt'] != null
           ? DateTime.tryParse(json['updatedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      questions: parsedQuestions,
+      questions: deduplicateQuestions(parsedQuestions),
     );
   }
 

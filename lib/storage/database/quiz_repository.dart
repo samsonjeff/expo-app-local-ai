@@ -36,9 +36,10 @@ class QuizRepository {
       // 2. Remove existing questions/options for this quiz if updating
       await txn.delete('questions', where: 'quiz_id = ?', whereArgs: [quiz.id]);
 
-      // 3. Insert questions and options
-      for (int i = 0; i < quiz.questions.length; i++) {
-        final q = quiz.questions[i];
+      // 3. Insert questions and options (strictly deduplicated)
+      final uniqueQuestions = Quiz.deduplicateQuestions(quiz.questions);
+      for (int i = 0; i < uniqueQuestions.length; i++) {
+        final q = uniqueQuestions[i];
         await txn.insert('questions', {
           'id': q.id,
           'quiz_id': quiz.id,
@@ -46,7 +47,7 @@ class QuizRepository {
           'question_type': q.questionType.value,
           'points': q.points,
           'explanation': q.explanation,
-          'order_index': q.orderIndex,
+          'order_index': i,
           'acceptable_answers_json': jsonEncode(q.acceptableAnswers),
         });
 
@@ -57,7 +58,7 @@ class QuizRepository {
             'question_id': q.id,
             'option_text': opt.optionText,
             'is_correct': opt.isCorrect ? 1 : 0,
-            'order_index': opt.orderIndex,
+            'order_index': j,
           });
         }
       }
@@ -130,7 +131,7 @@ class QuizRepository {
       ));
     }
 
-    return questions;
+    return Quiz.deduplicateQuestions(questions);
   }
 
   Future<List<Quiz>> getAllQuizzes() async {
