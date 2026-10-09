@@ -9,6 +9,8 @@ import '../../providers/quiz_providers.dart';
 import '../../storage/filesystem/file_storage_manager.dart';
 import '../../storage/filesystem/model_downloader.dart';
 import '../theme/app_theme.dart';
+import '../widgets/motion_widgets.dart';
+import 'privacy_promise_screen.dart';
 
 class AiSettingsScreen extends ConsumerStatefulWidget {
   const AiSettingsScreen({super.key});
@@ -213,6 +215,32 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
               value: _mockEngineForced,
               onChanged: (val) {
                 setState(() => _mockEngineForced = val);
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'PRIVACY & LEGAL',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.shield_outlined, color: Color(0xFF4F46E5)),
+              title: const Text('Welcome & Offline Privacy Promise'),
+              subtitle: const Text('Combined Notice: 100% on-device data guarantees & terms'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PrivacyPromiseScreen(isReviewMode: true),
+                  ),
+                );
               },
             ),
           ),
@@ -458,12 +486,16 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                   ],
                 ),
               ] else ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () => _startDownload(model),
-                    icon: const Icon(Icons.download, size: 18),
-                    label: Text('Download $sizeGb GB Model'),
+                TactilePressCard(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => _startDownload(model),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => _startDownload(model),
+                      icon: const Icon(Icons.download, size: 18),
+                      label: Text('Download $sizeGb GB Model'),
+                    ),
                   ),
                 ),
               ],
