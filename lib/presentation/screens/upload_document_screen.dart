@@ -8,6 +8,7 @@ import '../../providers/quiz_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
+import '../widgets/motion_widgets.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
   const UploadDocumentScreen({super.key});
@@ -194,76 +195,92 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       ),
       body: Column(
         children: [
-          // Upload Action Header Card
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFFEEF2FF),
-                  Colors.white,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+          // Upload Action Header Card with Tactile Press Feedback
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TactilePressCard(
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withAlpha(50),
-                width: 1.5,
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0F4F46E5),
-                  blurRadius: 12,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                      child: Icon(Icons.upload_file, size: 28, color: Theme.of(context).colorScheme.primary),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Upload Study Material',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Supports PDF, PPTX (PowerPoint), DOCX, TXT',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                          ),
-                        ],
-                      ),
+              onTap: _isProcessing ? null : _pickAndProcessFile,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFEEF2FF),
+                      Colors.white,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary.withAlpha(50),
+                    width: 1.5,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x0F4F46E5),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                if (_isProcessing) ...[
-                  LinearProgressIndicator(borderRadius: BorderRadius.circular(8)),
-                  const SizedBox(height: 8),
-                  Text(_statusText ?? 'Processing...', style: const TextStyle(fontSize: 12, color: Colors.indigo)),
-                ] else
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: FilledButton.icon(
-                      icon: const Icon(Icons.file_open),
-                      label: const Text('Choose File from Device'),
-                      onPressed: _pickAndProcessFile,
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                          child: Icon(Icons.upload_file, size: 28, color: Theme.of(context).colorScheme.primary),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Upload Study Material',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Supports PDF, PPTX (PowerPoint), DOCX, TXT',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-              ],
+                    const SizedBox(height: 16),
+                    if (_isProcessing) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: const LinearProgressIndicator(minHeight: 6),
+                      ),
+                      const SizedBox(height: 8),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        child: Text(
+                          _statusText ?? 'Processing...',
+                          key: ValueKey<String>(_statusText ?? ''),
+                          style: const TextStyle(fontSize: 12, color: Colors.indigo, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ] else
+                      SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: FilledButton.icon(
+                          icon: const Icon(Icons.file_open),
+                          label: const Text('Choose File from Device'),
+                          onPressed: _pickAndProcessFile,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
 
@@ -286,7 +303,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
             ),
           ),
 
-          // Documents List
+          // Documents List with Staggered Cascades
           Expanded(
             child: docsAsync.when(
               data: (docs) {
@@ -314,51 +331,68 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                     final color = _colorForDocType(doc.type, isDark);
                     final icon = _iconForDocType(doc.type);
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      elevation: 0,
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                          width: 1.2,
+                    return TweenAnimationBuilder<double>(
+                      key: ValueKey(doc.id),
+                      tween: Tween<double>(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: (280 + (i * 50)).clamp(280, 700)),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) => Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 16 * (1.0 - value)),
+                          child: child,
                         ),
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: color.withAlpha(30),
-                          child: Icon(icon, color: color),
-                        ),
-                        title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(
-                          '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • Ready for Generation',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            fontSize: 12,
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 0,
+                        color: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                            width: 1.2,
                           ),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton.filledTonal(
-                              style: IconButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                foregroundColor: Theme.of(context).colorScheme.primary,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: color.withAlpha(30),
+                            child: Icon(icon, color: color),
+                          ),
+                          title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          subtitle: Text(
+                            '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • Ready for Generation',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              fontSize: 12,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TactilePressCard(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () => _showGenerateFromDocDialog(doc),
+                                child: IconButton.filledTonal(
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                    foregroundColor: Theme.of(context).colorScheme.primary,
+                                  ),
+                                  icon: const Icon(Icons.play_arrow_rounded, size: 24),
+                                  tooltip: 'Start Quiz Generation',
+                                  onPressed: () => _showGenerateFromDocDialog(doc),
+                                ),
                               ),
-                              icon: const Icon(Icons.play_arrow_rounded, size: 24),
-                              tooltip: 'Start Quiz Generation',
-                              onPressed: () => _showGenerateFromDocDialog(doc),
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                              tooltip: 'Delete Document',
-                              onPressed: () {
-                                ref.read(documentsProvider.notifier).deleteDocument(doc.id);
-                              },
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                tooltip: 'Delete Document',
+                                onPressed: () {
+                                  ref.read(documentsProvider.notifier).deleteDocument(doc.id);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

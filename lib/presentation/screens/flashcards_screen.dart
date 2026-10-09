@@ -145,18 +145,32 @@ class FlashcardsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final cardCount = quiz.questions.length;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: TactilePressCard(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => FlashcardStudyScreen(quiz: quiz),
-            ),
-          );
-        },
-        child: Card(
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(quiz.id),
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: (300 + (index * 60)).clamp(300, 700)),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 16 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TactilePressCard(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FlashcardStudyScreen(quiz: quiz),
+              ),
+            );
+          },
+          child: Card(
           elevation: 0,
           color: Colors.white,
           shape: RoundedRectangleBorder(
@@ -223,6 +237,7 @@ class FlashcardsScreen extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Centralized Material Design 3 (M3) theme configuration and color system
 /// for the Local AI Quiz & Reviewer application.
 /// Strictly follows the "Calm Cognitive Focus" design guidelines.
 class AppTheme {
+  /// Centralized Inter Bold typography for the MaQui App Name
+  static TextStyle appNameStyle({
+    double fontSize = 20,
+    Color? color,
+    FontWeight fontWeight = FontWeight.bold,
+    double letterSpacing = -0.6,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+    );
+  }
+
   // ---------------------------------------------------------------------------
   // Core Brand Seeds
   // ---------------------------------------------------------------------------
@@ -128,19 +144,20 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: const Color(0xFFFFFFFF), // Pure White background
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFFFFFFF),
-        foregroundColor: Color(0xFF0F172A),
+      appBarTheme: AppBarTheme(
+        backgroundColor: const Color(0xFFFFFFFF),
+        foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
         scrolledUnderElevation: 0.5,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        iconTheme: IconThemeData(color: Color(0xFF0F172A)),
-        actionsIconTheme: IconThemeData(color: Color(0xFF0F172A)),
-        titleTextStyle: TextStyle(
-          color: Color(0xFF0F172A),
+        iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+        actionsIconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+        titleTextStyle: GoogleFonts.inter(
+          color: const Color(0xFF0F172A),
           fontSize: 20,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
         ),
       ),
       cardTheme: CardThemeData(
@@ -297,10 +314,11 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0.5,
         centerTitle: false,
-        titleTextStyle: const TextStyle(
-          color: Color(0xFFF8FAFC),
+        titleTextStyle: GoogleFonts.inter(
+          color: const Color(0xFFF8FAFC),
           fontSize: 20,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.5,
         ),
       ),
       cardTheme: CardThemeData(

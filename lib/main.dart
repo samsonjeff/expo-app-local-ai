@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'presentation/screens/main_navigation_shell.dart';
+import 'presentation/screens/splash_screen.dart';
 import 'presentation/theme/app_theme.dart';
 
 void main() {
@@ -31,12 +31,12 @@ class LocalAiQuizApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ProviderScope(
       child: MaterialApp(
-        title: 'Local AI Quiz App',
+        title: 'MaQui',
         debugShowCheckedModeBanner: false,
         themeMode: ThemeMode.light,
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
-        home: const MainNavigationShell(),
+        home: const SplashScreen(),
       ),
     );
   }
