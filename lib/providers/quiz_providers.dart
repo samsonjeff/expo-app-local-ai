@@ -6,6 +6,7 @@ import '../inference/mock_llama_bridge.dart';
 import '../inference/model_lifecycle_manager.dart';
 import '../inference/native_flutter_llama_bridge.dart';
 import '../inference/ram_detector.dart';
+import '../models/document.dart';
 import '../models/inference.dart';
 import '../models/job.dart';
 import '../models/quiz.dart';
@@ -103,4 +104,37 @@ final quizzesProvider = AsyncNotifierProvider<QuizzesNotifier, List<Quiz>>(() {
 final activeJobStreamProvider = StreamProvider<GenerationJob>((ref) {
   final queue = ref.watch(jobQueueManagerProvider);
   return queue.jobUpdates;
+});
+
+// All Documents State Notifier
+class DocumentsNotifier extends AsyncNotifier<List<DocumentMetadata>> {
+  @override
+  Future<List<DocumentMetadata>> build() async {
+    final repo = ref.watch(documentRepositoryProvider);
+    return await repo.getAllDocuments();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(documentRepositoryProvider);
+      return await repo.getAllDocuments();
+    });
+  }
+
+  Future<void> addDocument(DocumentMetadata doc) async {
+    final repo = ref.read(documentRepositoryProvider);
+    await repo.saveDocument(doc);
+    await refresh();
+  }
+
+  Future<void> deleteDocument(String id) async {
+    final repo = ref.read(documentRepositoryProvider);
+    await repo.deleteDocument(id);
+    await refresh();
+  }
+}
+
+final documentsProvider = AsyncNotifierProvider<DocumentsNotifier, List<DocumentMetadata>>(() {
+  return DocumentsNotifier();
 });

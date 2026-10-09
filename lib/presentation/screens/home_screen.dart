@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/job.dart';
 import '../../providers/quiz_providers.dart';
 import 'quiz_play_screen.dart';
+import 'upload_document_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -179,6 +180,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('Local AI Quiz App', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file),
+            tooltip: 'Upload Study Material (PDF, PPTX)',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
+              );
+            },
+          ),
           hwAsync.when(
             data: (hw) => Padding(
               padding: const EdgeInsets.only(right: 16),
@@ -203,12 +214,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 16),
                   const Text('No Quizzes Yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  const Text('Tap the button below to generate a quiz offline using local AI.'),
+                  const Text('Generate from topic or upload lecture slides (PDF/PPTX).'),
                   const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: _showGenerateDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create First Quiz'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: _showGenerateDialog,
+                        icon: const Icon(Icons.add),
+                        label: const Text('From Topic'),
+                      ),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('Upload PDF/PPTX'),
+                      ),
+                    ],
                   ),
                 ],
               ),

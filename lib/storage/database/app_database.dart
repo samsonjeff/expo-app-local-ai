@@ -51,6 +51,7 @@ class AppDatabase {
         file_size_bytes INTEGER NOT NULL,
         character_count INTEGER DEFAULT 0,
         estimated_tokens INTEGER DEFAULT 0,
+        extracted_text TEXT DEFAULT '',
         uploaded_at TEXT NOT NULL
       );
     ''');

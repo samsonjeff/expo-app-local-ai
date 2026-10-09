@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'package:flutter/foundation.dart';
 import 'package:archive/archive.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:xml/xml.dart';
@@ -8,6 +9,9 @@ import '../models/document.dart';
 
 class DocumentParser {
   static Future<String> parseFileInIsolate(String filePath) async {
+    if (kIsWeb) {
+      throw UnsupportedError('File paths not supported on Web. Use parseBytesAsync instead.');
+    }
     final file = File(filePath);
     if (!await file.exists()) {
       throw FileSystemException('File not found', filePath);
@@ -16,6 +20,13 @@ class DocumentParser {
     final bytes = await file.readAsBytes();
     final type = DocumentType.fromPath(filePath);
 
+    return await parseBytesAsync(bytes, type);
+  }
+
+  static Future<String> parseBytesAsync(List<int> bytes, DocumentType type) async {
+    if (kIsWeb) {
+      return parseBytes(bytes, type);
+    }
     return await Isolate.run(() {
       return parseBytes(bytes, type);
     });

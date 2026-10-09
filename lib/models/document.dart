@@ -60,6 +60,7 @@ class DocumentMetadata {
   final int fileSizeBytes;
   final int characterCount;
   final int estimatedTokens;
+  final String extractedText;
   final DateTime uploadedAt;
 
   DocumentMetadata({
@@ -70,6 +71,7 @@ class DocumentMetadata {
     required this.fileSizeBytes,
     this.characterCount = 0,
     this.estimatedTokens = 0,
+    this.extractedText = '',
     DateTime? uploadedAt,
   })  : id = id ?? const Uuid().v4(),
         uploadedAt = uploadedAt ?? DateTime.now();
@@ -82,6 +84,7 @@ class DocumentMetadata {
     'fileSizeBytes': fileSizeBytes,
     'characterCount': characterCount,
     'estimatedTokens': estimatedTokens,
+    'extractedText': extractedText,
     'uploadedAt': uploadedAt.toIso8601String(),
   };
 
@@ -96,6 +99,7 @@ class DocumentMetadata {
     fileSizeBytes: (json['fileSizeBytes'] as num).toInt(),
     characterCount: (json['characterCount'] as num?)?.toInt() ?? 0,
     estimatedTokens: (json['estimatedTokens'] as num?)?.toInt() ?? 0,
+    extractedText: json['extractedText'] as String? ?? '',
     uploadedAt: json['uploadedAt'] != null
         ? DateTime.tryParse(json['uploadedAt'].toString()) ?? DateTime.now()
         : DateTime.now(),

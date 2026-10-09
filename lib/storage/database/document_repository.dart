@@ -17,6 +17,7 @@ class DocumentRepository {
         'file_size_bytes': doc.fileSizeBytes,
         'character_count': doc.characterCount,
         'estimated_tokens': doc.estimatedTokens,
+        'extracted_text': doc.extractedText,
         'uploaded_at': doc.uploadedAt.toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -39,6 +40,7 @@ class DocumentRepository {
       fileSizeBytes: row['file_size_bytes'] as int,
       characterCount: row['character_count'] as int? ?? 0,
       estimatedTokens: row['estimated_tokens'] as int? ?? 0,
+      extractedText: row['extracted_text'] as String? ?? '',
       uploadedAt: DateTime.parse(row['uploaded_at'] as String),
     );
   }
@@ -57,6 +59,7 @@ class DocumentRepository {
       fileSizeBytes: row['file_size_bytes'] as int,
       characterCount: row['character_count'] as int? ?? 0,
       estimatedTokens: row['estimated_tokens'] as int? ?? 0,
+      extractedText: row['extracted_text'] as String? ?? '',
       uploadedAt: DateTime.parse(row['uploaded_at'] as String),
     )).toList();
   }

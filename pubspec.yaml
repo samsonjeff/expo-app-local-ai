@@ -50,6 +50,7 @@ dependencies:
   flutter_llama: ^1.1.2
   sqflite_common_ffi_web: ^1.2.0
   sqflite_common_ffi: ^2.4.3
+  file_picker: ^13.1.0
 
 dev_dependencies:
   flutter_test:

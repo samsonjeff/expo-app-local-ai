@@ -67,7 +67,11 @@ class JobQueueManager {
 
         final doc = await docRepo.getDocumentById(currentJob.documentId!);
         if (doc != null) {
-          contextContent = await DocumentParser.parseFileInIsolate(doc.filePath);
+          if (doc.extractedText.isNotEmpty) {
+            contextContent = doc.extractedText;
+          } else {
+            contextContent = await DocumentParser.parseFileInIsolate(doc.filePath);
+          }
         }
       }
 
