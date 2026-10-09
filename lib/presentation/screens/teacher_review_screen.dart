@@ -82,9 +82,11 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
                   child: Icon(Icons.print_outlined, color: Theme.of(ctx).colorScheme.primary),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Export & Print Assessment',
-                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    'Export & Print Assessment',
+                    style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -391,10 +393,14 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
                 bottom: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(100)),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       _viewMode == TeacherViewMode.questionAndAnswer ? Icons.visibility : Icons.visibility_off,
@@ -409,14 +415,15 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
                   ],
                 ),
                 SegmentedButton<TeacherViewMode>(
+                  showSelectedIcon: false,
                   segments: const [
                     ButtonSegment(
                       value: TeacherViewMode.questionOnly,
-                      label: Text('Question Only'),
+                      label: Text('Questions'),
                     ),
                     ButtonSegment(
                       value: TeacherViewMode.questionAndAnswer,
-                      label: Text('Question & Answer'),
+                      label: Text('Q & A'),
                     ),
                   ],
                   selected: {_viewMode},
@@ -483,38 +490,52 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
             // Question Header
             Row(
               children: [
-                CircleAvatar(
-                  radius: 14,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Text(
-                    '${index + 1}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.primary,
-                    ),
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 12,
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          q.questionType.label,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                      Text(
+                        '${q.points} pt${q.points > 1 ? "s" : ""}',
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 11),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                Chip(
-                  label: Text(q.questionType.label, style: const TextStyle(fontSize: 11)),
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${q.points} pt${q.points > 1 ? "s" : ""}',
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
-                ),
-                const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.edit_outlined, size: 20),
                   tooltip: 'Edit Item',
+                  visualDensity: VisualDensity.compact,
                   onPressed: () => _showEditQuestionDialog(q, index),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline, size: 20, color: Colors.redAccent),
                   tooltip: 'Delete Item',
+                  visualDensity: VisualDensity.compact,
                   onPressed: () => _deleteQuestion(index),
                 ),
               ],

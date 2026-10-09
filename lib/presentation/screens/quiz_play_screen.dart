@@ -397,26 +397,30 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  if (_currentIndex > 0)
+                  if (_currentIndex > 0) ...[
                     OutlinedButton.icon(
                       icon: const Icon(Icons.arrow_back),
-                      label: const Text('Previous'),
+                      label: const Text('Prev'),
                       onPressed: () => setState(() => _currentIndex--),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  FilledButton.icon(
-                    icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward),
-                    label: Text(isLast ? 'Submit Assessment' : 'Next Question'),
-                    onPressed: () {
-                      if (isLast) {
-                        _showSubmitConfirmation();
-                      } else {
-                        setState(() => _currentIndex++);
-                      }
-                    },
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: FilledButton.icon(
+                      icon: Icon(isLast ? Icons.check_circle : Icons.arrow_forward),
+                      label: Text(
+                        isLast ? 'Submit Assessment' : 'Next Question',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onPressed: () {
+                        if (isLast) {
+                          _showSubmitConfirmation();
+                        } else {
+                          setState(() => _currentIndex++);
+                        }
+                      },
+                    ),
                   ),
                 ],
               ),

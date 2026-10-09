@@ -426,9 +426,11 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
             children: [
               const Icon(Icons.check, color: Colors.green),
               const SizedBox(width: 10),
-              Text(
-                'Correct Answer: $correctText',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+              Expanded(
+                child: Text(
+                  'Correct Answer: $correctText',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                ),
               ),
             ],
           ),

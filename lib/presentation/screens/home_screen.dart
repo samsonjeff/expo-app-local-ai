@@ -127,16 +127,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Expanded(
                   child: SegmentedButton<HomeTabFilter>(
+                    showSelectedIcon: false,
                     segments: const [
                       ButtonSegment(value: HomeTabFilter.all, label: Text('All')),
                       ButtonSegment(
                         value: HomeTabFilter.teacher,
-                        label: Text('Teacher Hub'),
+                        label: Text('Teacher'),
                         icon: Icon(Icons.edit_note),
                       ),
                       ButtonSegment(
                         value: HomeTabFilter.student,
-                        label: Text('Student Hub'),
+                        label: Text('Student'),
                         icon: Icon(Icons.school),
                       ),
                     ],
@@ -172,15 +173,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             style: TextStyle(color: Colors.grey),
                           ),
                           const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 12,
+                            runSpacing: 10,
                             children: [
                               FilledButton.icon(
                                 onPressed: _openConfigDialog,
                                 icon: const Icon(Icons.add),
                                 label: const Text('Generate from Topic'),
                               ),
-                              const SizedBox(width: 12),
                               OutlinedButton.icon(
                                 onPressed: () {
                                   Navigator.push(
@@ -240,62 +242,70 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             // Top Badges Row
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Mode Badge: Quiz | Exam
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isExam ? Colors.deepPurple.withAlpha(35) : Colors.indigo.withAlpha(35),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(
-                        isExam ? Icons.school : Icons.quiz,
-                        size: 14,
-                        color: isExam ? Colors.deepPurple : Colors.indigo,
+                      // Mode Badge: Quiz | Exam
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isExam ? Colors.deepPurple.withAlpha(35) : Colors.indigo.withAlpha(35),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isExam ? Icons.school : Icons.quiz,
+                              size: 14,
+                              color: isExam ? Colors.deepPurple : Colors.indigo,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              quiz.assessmentMode.label.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: isExam ? Colors.deepPurple : Colors.indigo,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        quiz.assessmentMode.label.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isExam ? Colors.deepPurple : Colors.indigo,
+
+                      // Difficulty Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          quiz.difficulty.label,
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+
+                      // Passing Score Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withAlpha(30),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Pass: ${quiz.passingScore}%',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade700),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-
-                // Difficulty Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    quiz.difficulty.label,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Passing Score Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withAlpha(30),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Pass: ${quiz.passingScore}%',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade700),
-                  ),
-                ),
-                const Spacer(),
 
                 // Delete Menu
                 IconButton(
