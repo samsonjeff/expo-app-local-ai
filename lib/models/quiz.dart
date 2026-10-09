@@ -12,6 +12,23 @@ enum QuestionType {
   final String label;
   const QuestionType(this.value, this.label);
 
+  int get sortPriority {
+    switch (this) {
+      case QuestionType.multipleChoice:
+        return 1;
+      case QuestionType.trueFalse:
+        return 2;
+      case QuestionType.fillInBlank:
+        return 3;
+      case QuestionType.identification:
+        return 4;
+      case QuestionType.enumeration:
+        return 5;
+      case QuestionType.essay:
+        return 6;
+    }
+  }
+
   static QuestionType fromString(String val) {
     return QuestionType.values.firstWhere(
       (e) => e.value == val || e.name == val,
@@ -293,6 +310,26 @@ class Quiz {
     }
 
     return unique;
+  }
+
+  /// Sorts questions by pedagogical type hierarchy:
+  /// 1. Multiple Choice -> 2. True or False -> 3. Fill in Blank ->
+  /// 4. Identification -> 5. Enumeration -> 6. Essay (at the very end).
+  /// Preserves existing relative order within each type and re-indexes orderIndex.
+  static List<QuizQuestion> sortQuestionsByType(List<QuizQuestion> questions) {
+    if (questions.isEmpty) return const [];
+    final list = List<QuizQuestion>.from(questions);
+    list.sort((a, b) {
+      final prioComp = a.questionType.sortPriority.compareTo(b.questionType.sortPriority);
+      if (prioComp != 0) return prioComp;
+      return a.orderIndex.compareTo(b.orderIndex);
+    });
+    return List.generate(list.length, (i) => list[i].copyWith(orderIndex: i));
+  }
+
+  /// Returns a new Quiz instance with its questions grouped and sorted by question type.
+  Quiz sortedByType() {
+    return copyWith(questions: sortQuestionsByType(questions));
   }
 
   Quiz copyWith({

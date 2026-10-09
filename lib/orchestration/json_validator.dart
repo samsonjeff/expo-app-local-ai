@@ -71,6 +71,7 @@ class JsonValidator {
       throw const FormatException('Generated JSON does not contain any valid unique questions');
     }
 
-    return quiz;
+    // Sort questions by pedagogical question type hierarchy (Multiple Choice -> True/False -> Identification -> Enumeration -> Essay)
+    return quiz.sortedByType();
   }
 }

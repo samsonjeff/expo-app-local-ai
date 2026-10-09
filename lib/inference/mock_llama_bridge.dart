@@ -87,7 +87,7 @@ class MockLlamaBridge implements LlamaBridge {
       assessmentMode = modeMatch.group(1)!.toLowerCase();
     }
 
-    // 4. Extract Allowed Question Types
+    // 4. Extract Allowed Question Types and sort in pedagogical section order
     List<String> allowedTypes = ['multiple_choice'];
     final typesMatch = RegExp(r'Allowed Question Types:\s*\[(.*?)\]').firstMatch(prompt);
     if (typesMatch != null) {
@@ -96,6 +96,12 @@ class MockLlamaBridge implements LlamaBridge {
         allowedTypes = rawTypes;
       }
     }
+    // Sort types: Multiple Choice -> True/False -> Identification -> Enumeration -> Essay
+    allowedTypes.sort((a, b) {
+      final prioA = QuestionType.fromString(a).sortPriority;
+      final prioB = QuestionType.fromString(b).sortPriority;
+      return prioA.compareTo(prioB);
+    });
 
     // 5. Extract STUDY MATERIAL content if present
     final materialRegex = RegExp(r'STUDY MATERIAL:\s*"""([\s\S]*?)"""');
@@ -177,8 +183,21 @@ class MockLlamaBridge implements LlamaBridge {
       "It is strictly restricted to deprecated legacy runtimes.",
     ];
 
+    // Group questions sequentially into contiguous sections (e.g. 10 Multiple Choice, 10 True/False, 10 Identification, etc.)
+    final typeAssignments = <String>[];
+    final itemsPerType = targetCount ~/ allowedTypes.length;
+    var remainder = targetCount % allowedTypes.length;
+
+    for (final type in allowedTypes) {
+      final countForType = itemsPerType + (remainder > 0 ? 1 : 0);
+      if (remainder > 0) remainder--;
+      for (int k = 0; k < countForType; k++) {
+        typeAssignments.add(type);
+      }
+    }
+
     for (int i = 0; i < targetCount; i++) {
-      final qType = allowedTypes[i % allowedTypes.length];
+      final qType = (i < typeAssignments.length) ? typeAssignments[i] : allowedTypes[i % allowedTypes.length];
       final fact = keyFacts[i % keyFacts.length];
       final words = fact.split(' ').where((w) => w.length > 4 && !w.contains(RegExp(r'[0-9]'))).toList();
       final keyword = words.isNotEmpty ? words[(i * 3 + 1) % words.length] : "the subject";

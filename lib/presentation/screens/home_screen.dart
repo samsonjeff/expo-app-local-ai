@@ -1,7 +1,10 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/document.dart';
 import '../../models/job.dart';
 import '../../models/quiz.dart';
+import '../../orchestration/document_parser.dart';
 import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
 import '../theme/app_theme.dart';
@@ -22,6 +25,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final TextEditingController _pasteTextController;
   bool _isGenerating = false;
+  bool _isPickingFile = false;
+  String? _pickingStatus;
 
   @override
   void initState() {
@@ -33,6 +38,106 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void dispose() {
     _pasteTextController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndProcessFileDirectly() async {
+    try {
+      final pickedFile = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'pptx', 'docx', 'txt', 'md'],
+      );
+
+      if (pickedFile == null) return;
+
+      final fileName = pickedFile.name;
+      final bytes = await pickedFile.readAsBytes();
+
+      if (bytes.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not read file data. Please try another file.')),
+          );
+        }
+        return;
+      }
+
+      setState(() {
+        _isPickingFile = true;
+        _pickingStatus = 'Extracting $fileName...';
+      });
+
+      final docType = DocumentType.fromPath(fileName);
+      final extractedText = await DocumentParser.parseBytesAsync(bytes, docType);
+
+      if (extractedText.trim().isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No readable text could be extracted from this document.')),
+          );
+        }
+        return;
+      }
+
+      final doc = DocumentMetadata(
+        fileName: fileName,
+        filePath: pickedFile.path ?? fileName,
+        type: docType,
+        fileSizeBytes: bytes.length,
+        characterCount: extractedText.length,
+        estimatedTokens: extractedText.length ~/ 4,
+        extractedText: extractedText,
+      );
+
+      await ref.read(documentsProvider.notifier).addDocument(doc);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 2),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Extracted "$fileName" (${doc.estimatedTokens} tokens)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        // Smoothly open QuizConfigDialog with the loaded document!
+        QuizConfigDialog.show(
+          context: context,
+          document: doc,
+          onStartGeneration: _startGenerationWithJob,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error uploading file: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPickingFile = false;
+          _pickingStatus = null;
+        });
+      }
+    }
   }
 
   void _openConfigDialog() {
@@ -205,10 +310,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error loading quizzes: $err')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _isGenerating ? null : _openConfigDialog,
-        icon: const Icon(Icons.bolt),
-        label: const Text('New Assessment'),
+        tooltip: 'New Assessment',
+        child: const Icon(Icons.draw, size: 26),
       ),
     );
   }
@@ -311,24 +416,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
-              height: 46,
-              child: FilledButton.icon(
+              height: 48,
+              child: FilledButton(
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.file_open_rounded),
-                label: const Text(
-                  'Choose File from Device',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                onPressed: (_isPickingFile || _isGenerating) ? null : _pickAndProcessFileDirectly,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, anim) => FadeTransition(
+                    opacity: anim,
+                    child: ScaleTransition(scale: anim, child: child),
+                  ),
+                  child: _isPickingFile
+                      ? Row(
+                          key: const ValueKey('loading'),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Text(
+                                _pickingStatus ?? 'Reading document...',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Row(
+                          key: ValueKey('idle'),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.file_open_rounded, size: 20),
+                            SizedBox(width: 10),
+                            Text(
+                              'Choose File from Device',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                            ),
+                          ],
+                        ),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
-                  );
-                },
               ),
             ),
+            if (_isPickingFile) ...[
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: const LinearProgressIndicator(minHeight: 4),
+              ),
+            ],
           ],
         ),
       ),

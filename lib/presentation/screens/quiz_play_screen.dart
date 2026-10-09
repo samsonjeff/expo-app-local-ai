@@ -22,6 +22,7 @@ class QuizPlayScreen extends ConsumerStatefulWidget {
 
 class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
   int _currentIndex = 0;
+  late final List<QuizQuestion> _sortedQuestions;
   final Map<String, String> _selectedOptionIds = {};
   final Map<String, TextEditingController> _textControllers = {};
   final Map<String, List<TextEditingController>> _enumerationControllers = {};
@@ -34,6 +35,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
   @override
   void initState() {
     super.initState();
+    _sortedQuestions = Quiz.sortQuestionsByType(widget.quiz.questions);
     _startTimer();
   }
 
@@ -80,11 +82,11 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
   }
 
   void _submitQuiz() async {
-    final quiz = widget.quiz;
+    final quiz = widget.quiz.copyWith(questions: _sortedQuestions);
     final answers = <UserAnswer>[];
     int score = 0;
 
-    for (final q in quiz.questions) {
+    for (final q in _sortedQuestions) {
       bool isCorrect = false;
       String? selectedOptId;
       String? textAnswer;
@@ -213,67 +215,132 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
     );
   }
 
+  IconData _iconForType(QuestionType type) {
+    switch (type) {
+      case QuestionType.multipleChoice:
+        return Icons.radio_button_checked;
+      case QuestionType.trueFalse:
+        return Icons.rule;
+      case QuestionType.fillInBlank:
+        return Icons.edit_note;
+      case QuestionType.identification:
+        return Icons.badge_outlined;
+      case QuestionType.enumeration:
+        return Icons.format_list_numbered;
+      case QuestionType.essay:
+        return Icons.article_outlined;
+    }
+  }
+
   void _showQuestionGrid() {
+    // Group question indices by type in sort order
+    final sections = <QuestionType, List<int>>{};
+    for (int i = 0; i < _sortedQuestions.length; i++) {
+      final t = _sortedQuestions[i].questionType;
+      sections.putIfAbsent(t, () => []).add(i);
+    }
+
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        maxChildSize: 0.85,
+        minChildSize: 0.3,
+        expand: false,
+        builder: (_, scrollController) => ListView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(20),
           children: [
-            Text(
-              'Question Navigator',
-              style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: List.generate(widget.quiz.questions.length, (idx) {
-                final q = widget.quiz.questions[idx];
-                final isAnswered = _isAnswered(q);
-                final isCurrent = idx == _currentIndex;
-
-                return InkWell(
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    setState(() => _currentIndex = idx);
-                  },
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: isCurrent
-                          ? Theme.of(ctx).colorScheme.primary
-                          : (isAnswered ? Colors.green.withAlpha(40) : Theme.of(ctx).colorScheme.surfaceContainerHighest),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isCurrent
-                            ? Theme.of(ctx).colorScheme.primary
-                            : (isAnswered ? Colors.green : Colors.grey.shade400),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${idx + 1}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isCurrent
-                              ? Colors.white
-                              : (isAnswered ? Colors.green.shade800 : null),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Question Navigator',
+                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '${_sortedQuestions.where((q) => _isAnswered(q)).length}/${_sortedQuestions.length} answered',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
+            ...sections.entries.map((entry) {
+              final type = entry.key;
+              final indices = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(_iconForType(type), size: 14, color: Theme.of(ctx).colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${type.label.toUpperCase()} (${indices.first + 1}–${indices.last + 1})',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.6,
+                            color: Theme.of(ctx).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: indices.map((idx) {
+                        final q = _sortedQuestions[idx];
+                        final isAnswered = _isAnswered(q);
+                        final isCurrent = idx == _currentIndex;
+
+                        return InkWell(
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            setState(() => _currentIndex = idx);
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: isCurrent
+                                  ? Theme.of(ctx).colorScheme.primary
+                                  : (isAnswered ? Colors.green.withAlpha(40) : Theme.of(ctx).colorScheme.surfaceContainerHighest),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: isCurrent
+                                    ? Theme.of(ctx).colorScheme.primary
+                                    : (isAnswered ? Colors.green : Colors.grey.shade400),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${idx + 1}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isCurrent
+                                      ? Colors.white
+                                      : (isAnswered ? Colors.green.shade800 : null),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const Divider(),
             Row(
               children: [
                 Container(width: 12, height: 12, color: Colors.green),
@@ -299,7 +366,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final questions = widget.quiz.questions;
+    final questions = _sortedQuestions;
     if (questions.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text(widget.quiz.title)),
@@ -310,6 +377,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
     final q = questions[_currentIndex];
     final isLast = _currentIndex == questions.length - 1;
     final isRevealed = _revealedAnswers[q.id] == true;
+    final isSectionStart = _currentIndex > 0 && questions[_currentIndex - 1].questionType != q.questionType;
 
     return Scaffold(
       appBar: AppBar(
@@ -347,13 +415,42 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
               borderRadius: BorderRadius.circular(8),
               minHeight: 6,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // Section Transition Notice
+            if (isSectionStart)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withAlpha(120),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Theme.of(context).colorScheme.primary.withAlpha(60)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(_iconForType(q.questionType), size: 16, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Section: ${q.questionType.label}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             // Question Type Badge & Points
             Row(
               children: [
                 Chip(
-                  label: Text(q.questionType.label, style: const TextStyle(fontSize: 11)),
+                  avatar: Icon(_iconForType(q.questionType), size: 14),
+                  label: Text(q.questionType.label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                   padding: EdgeInsets.zero,
                   visualDensity: VisualDensity.compact,
                 ),
@@ -473,7 +570,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
   }
 
   void _showSubmitConfirmation() {
-    final unanswered = widget.quiz.questions.where((q) => !_isAnswered(q)).length;
+    final unanswered = _sortedQuestions.where((q) => !_isAnswered(q)).length;
 
     showDialog(
       context: context,

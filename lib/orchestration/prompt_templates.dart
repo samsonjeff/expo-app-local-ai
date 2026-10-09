@@ -36,6 +36,14 @@ FORMAT SPECIFICATIONS FOR QUESTION TYPES:
 5. "identification": options can be empty. "acceptableAnswers" must contain the target term/name/concept.
 6. "essay": options can be empty. "explanation" must serve as a comprehensive grading rubric/key.
  
+SECTION STRUCTURE & QUESTION ORDERING:
+- Group questions sequentially by type into natural exam sections:
+  1. Multiple Choice ("multiple_choice")
+  2. True or False ("true_false")
+  3. Fill in the Blank / Identification ("fill_in_blank", "identification")
+  4. Enumeration ("enumeration")
+  5. Essay ("essay") placed at the very end of the assessment so the student can focus on long-form written responses.
+
 UNIQUENESS & DIVERSITY REQUIREMENT:
 - Every question MUST be unique, distinct, and assess a different concept or aspect.
 - NEVER repeat or duplicate questions, prompts, concepts, or phrasing under any circumstances.
