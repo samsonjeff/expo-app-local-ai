@@ -354,19 +354,24 @@ class ResultsScreen extends StatelessWidget {
       final selectedOpt = q.options.where((o) => o.id == answer.selectedOptionId).firstOrNull;
       final correctOpt = q.options.where((o) => o.isCorrect).firstOrNull;
 
+      final userAnsText = selectedOpt?.optionText ??
+          (answer.textAnswer?.isNotEmpty == true ? answer.textAnswer! : 'No answer selected');
+      final correctAnsText = correctOpt?.optionText ??
+          (q.acceptableAnswers.isNotEmpty ? q.acceptableAnswers.first : (q.questionType == QuestionType.trueFalse ? (answer.isCorrect ? userAnsText : (userAnsText == 'True' ? 'False' : 'True')) : ''));
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Answer: ${selectedOpt?.optionText ?? "No answer selected"}',
+            'Your Answer: $userAnsText',
             style: TextStyle(
               color: answer.isCorrect ? Colors.green.shade700 : Colors.red.shade700,
               fontWeight: FontWeight.w600,
             ),
           ),
-          if (!answer.isCorrect && correctOpt != null)
+          if (!answer.isCorrect && correctAnsText.isNotEmpty)
             Text(
-              'Correct Answer: ${correctOpt.optionText}',
+              'Correct Answer: $correctAnsText',
               style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
             ),
         ],

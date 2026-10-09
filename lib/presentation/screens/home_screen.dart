@@ -631,7 +631,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   icon: const Icon(Icons.play_arrow, size: 18),
                   label: Text(isExam ? 'Take Exam' : 'Take Quiz'),
-                  onPressed: () => _showStudentModeSheet(quiz),
+                  onPressed: () {
+                    if (isExam) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: false),
+                        ),
+                      );
+                    } else {
+                      _showStudentModeSheet(quiz);
+                    }
+                  },
                 ),
                 OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(

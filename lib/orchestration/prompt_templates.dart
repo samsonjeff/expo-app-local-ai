@@ -35,5 +35,10 @@ FORMAT SPECIFICATIONS FOR QUESTION TYPES:
 4. "enumeration": "acceptableAnswers" must contain all items expected in the list.
 5. "identification": options can be empty. "acceptableAnswers" must contain the target term/name/concept.
 6. "essay": options can be empty. "explanation" must serve as a comprehensive grading rubric/key.
+ 
+UNIQUENESS & DIVERSITY REQUIREMENT:
+- Every question MUST be unique, distinct, and assess a different concept or aspect.
+- NEVER repeat or duplicate questions, prompts, concepts, or phrasing under any circumstances.
+- Ensure all options within each question are distinct from one another.
 ''';
 }

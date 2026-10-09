@@ -24,6 +24,7 @@ INSTRUCTIONS FOR THIS GENERATION TASK:
 4. Passing Score Threshold: $passingScore%
 5. Allowed Question Types: [$typesStr]
 6. Base all questions strictly on the context below.
+7. STRICT UNIQUENESS: Generate exactly $questionCount unique questions. Do not repeat any question or test the exact same concept twice.
 
 $contextText
 

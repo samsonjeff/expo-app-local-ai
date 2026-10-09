@@ -59,6 +59,21 @@ class AppDatabase {
     try {
       await db.execute("ALTER TABLE generation_jobs ADD COLUMN passing_score INTEGER DEFAULT 70");
     } catch (_) {}
+
+    // Deduplicate any legacy duplicate questions in the database
+    try {
+      await db.execute('''
+        DELETE FROM questions
+        WHERE rowid NOT IN (
+          SELECT MIN(rowid)
+          FROM questions
+          GROUP BY quiz_id, LOWER(TRIM(question_text))
+        );
+      ''');
+    } catch (_) {}
+    try {
+      await db.execute('DELETE FROM options WHERE question_id NOT IN (SELECT id FROM questions);');
+    } catch (_) {}
   }
 
   static Future<void> _createTables(Database db) async {

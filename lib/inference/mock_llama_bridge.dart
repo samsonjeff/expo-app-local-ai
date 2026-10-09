@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import '../models/inference.dart';
+import '../models/quiz.dart';
 import 'llama_bridge.dart';
 
 class MockLlamaBridge implements LlamaBridge {
@@ -132,102 +133,213 @@ class MockLlamaBridge implements LlamaBridge {
           .toList();
     }
 
+    final foundationalFacets = [
+      "Foundational principles and structural taxonomy of $title",
+      "Practical implementation paradigms and standard methodologies",
+      "Empirical evaluation and performance trade-offs in modern workflows",
+      "Safety guarantees, fault isolation, and state verification rules",
+      "Architectural synthesis, lifecycle management, and resource bounds",
+      "Error recovery patterns, mitigation strategies, and edge-case handling",
+      "Scalability invariants, concurrency controls, and throughput bounds",
+      "Real-world application domains, operational constraints, and protocols",
+      "Comparative analysis against legacy frameworks and baseline techniques",
+      "Continuous verification, observability benchmarks, and telemetry standards",
+      "State transition integrity and memory lifecycle constraints",
+      "Algorithmic complexity, latency limits, and hardware-aware optimizations",
+      "Modular subsystem encapsulation and clean interface boundaries",
+      "Data serialization guarantees, validation schemas, and transactional safety",
+      "Deployment topology configurations and environmental compliance",
+    ];
+
     if (keyFacts.isEmpty) {
-      keyFacts = [
-        "Foundational principles and structural taxonomy of $title",
-        "Practical implementation paradigms and standard methodologies",
-        "Empirical evaluation and performance trade-offs in modern workflows",
-        "Safety guarantees, fault isolation, and state verification rules",
-        "Architectural synthesis, lifecycle management, and resource bounds",
-      ];
+      keyFacts = foundationalFacets;
+    } else if (keyFacts.length < targetCount) {
+      // Supplement document facts with foundational domain facets to guarantee sufficient variety
+      for (final facet in foundationalFacets) {
+        if (!keyFacts.contains(facet)) {
+          keyFacts.add(facet);
+        }
+        if (keyFacts.length >= targetCount * 2) break;
+      }
     }
 
     final questions = <Map<String, dynamic>>[];
+    final seenNormalizedTexts = <String>{};
+
+    final distractorPool = [
+      "It represents an unverified hypothesis dismissed by authorities.",
+      "It is an auxiliary detail with zero bearing on overall results.",
+      "It is completely superseded by legacy practices.",
+      "It operates solely as an optional cosmetic embellishment.",
+      "It introduces unbounded memory leakage in constrained environments.",
+      "It violates fundamental architectural constraints.",
+      "It serves only as a temporary diagnostic shim.",
+      "It is strictly restricted to deprecated legacy runtimes.",
+    ];
 
     for (int i = 0; i < targetCount; i++) {
       final qType = allowedTypes[i % allowedTypes.length];
       final fact = keyFacts[i % keyFacts.length];
-      final words = fact.split(' ').where((w) => w.length > 4).toList();
-      final keyword = words.isNotEmpty ? words[i % words.length] : "the subject";
+      final words = fact.split(' ').where((w) => w.length > 4 && !w.contains(RegExp(r'[0-9]'))).toList();
+      final keyword = words.isNotEmpty ? words[(i * 3 + 1) % words.length] : "the subject";
 
-      switch (qType) {
-        case 'true_false':
-          final isTrue = (i % 2 == 0);
-          questions.add({
-            "questionText": isTrue
-                ? "According to the lesson material, '$fact'."
-                : "The material states that $keyword is universally deprecated and irrelevant.",
-            "questionType": "true_false",
-            "points": 1,
-            "explanation": isTrue
-                ? "True. This is a verified fact directly derived from the course material: '$fact'."
-                : "False. The material emphasizes that $keyword is vital rather than deprecated.",
-            "options": [
-              {"optionText": "True", "isCorrect": isTrue},
-              {"optionText": "False", "isCorrect": !isTrue}
-            ],
-            "acceptableAnswers": [isTrue ? "True" : "False"]
-          });
-          break;
+      String questionText = '';
+      String explanation = '';
+      List<Map<String, dynamic>> options = [];
+      List<String> acceptableAnswers = [];
+      int points = 1;
 
-        case 'identification':
-          questions.add({
-            "questionText": "Identification: What term designates the concept regarding '$fact'?",
-            "questionType": "identification",
-            "points": 2,
-            "explanation": "The target term is '$keyword' based directly on: '$fact'.",
-            "options": [],
-            "acceptableAnswers": [keyword, keyword.toLowerCase(), keyword.toUpperCase()]
-          });
-          break;
+      int attempt = 0;
+      do {
+        final variantIndex = (i + attempt) % 6;
+        switch (qType) {
+          case 'true_false':
+            points = 1;
+            final isTrue = ((i + attempt) % 2 == 0);
+            if (isTrue) {
+              if (variantIndex % 2 == 0) {
+                questionText = "According to the lesson material, '$fact'.";
+              } else {
+                questionText = "Empirical principles in $title verify that $fact.";
+              }
+              explanation = "True. This is directly derived from the study context: '$fact'.";
+            } else {
+              if (variantIndex % 2 == 0) {
+                questionText = "The material states that $keyword is universally deprecated and irrelevant in $title.";
+              } else {
+                questionText = "In $title, $keyword operates entirely without structural constraints or rules.";
+              }
+              explanation = "False. The material emphasizes that $keyword is an integral component.";
+            }
+            options = [
+              {"optionText": "True", "isCorrect": isTrue, "orderIndex": 0},
+              {"optionText": "False", "isCorrect": !isTrue, "orderIndex": 1}
+            ];
+            acceptableAnswers = [isTrue ? "True" : "False"];
+            break;
 
-        case 'enumeration':
-          questions.add({
-            "questionText": "Enumeration: Enumerate three key components or aspects related to $keyword.",
-            "questionType": "enumeration",
-            "points": 3,
-            "explanation": "Expected items derived from course context: Primary Concept, Supporting Framework, and Application Domain.",
-            "options": [],
-            "acceptableAnswers": [
+          case 'identification':
+            points = 2;
+            switch (variantIndex % 3) {
+              case 0:
+                questionText = "Identification: What term designates the concept regarding '$fact'?";
+                break;
+              case 1:
+                questionText = "Identification: Name the core mechanism responsible for $keyword in $title.";
+                break;
+              default:
+                questionText = "Identification: Which specific term denotes the principle: '$fact'?";
+                break;
+            }
+            explanation = "The target term is '$keyword' based directly on: '$fact'.";
+            options = [];
+            acceptableAnswers = [keyword, keyword.toLowerCase(), keyword.toUpperCase()];
+            break;
+
+          case 'enumeration':
+            points = 3;
+            switch (variantIndex % 3) {
+              case 0:
+                questionText = "Enumeration: Enumerate three key components or aspects related to $keyword.";
+                break;
+              case 1:
+                questionText = "Enumeration: List three primary requirements for implementing $keyword in $title.";
+                break;
+              default:
+                questionText = "Enumeration: Enumerate three critical criteria used to evaluate '$fact'.";
+                break;
+            }
+            explanation = "Expected items derived from context: Primary Concept, Supporting Framework, and Application Domain.";
+            options = [];
+            acceptableAnswers = [
               "Primary Concept",
               "Supporting Framework",
               "Application Domain"
-            ]
-          });
-          break;
+            ];
+            break;
 
-        case 'essay':
-          questions.add({
-            "questionText": "Essay: Discuss the importance and practical implications of '$fact' in relation to $title.",
-            "questionType": "essay",
-            "points": 5,
-            "explanation": "AI Rubric Key (Total: 5 Points):\n"
+          case 'essay':
+            points = 5;
+            switch (variantIndex % 3) {
+              case 0:
+                questionText = "Essay: Discuss the importance and practical implications of '$fact' in relation to $title.";
+                break;
+              case 1:
+                questionText = "Essay: Analyze how $keyword impacts overall architecture and reliability in $title.";
+                break;
+              default:
+                questionText = "Essay: Critically evaluate the trade-offs of applying '$fact' in $title.";
+                break;
+            }
+            explanation = "AI Rubric Key (Total: 5 Points):\n"
                 "• Conceptual Accuracy (2 pts): Clearly explains the principle involving $keyword.\n"
                 "• Analysis & Application (2 pts): Details relevant practical use cases and implications.\n"
                 "• Coherence & Clarity (1 pt): Structured logically with appropriate terminology.\n\n"
-                "Model Answer: A comprehensive answer must reference '$fact', demonstrate how it guides decision-making, and outline real-world execution constraints.",
-            "options": [],
-            "acceptableAnswers": []
-          });
-          break;
+                "Model Answer: A comprehensive answer must reference '$fact', demonstrate how it guides decision-making, and outline real-world execution constraints.";
+            options = [];
+            acceptableAnswers = [];
+            break;
 
-        case 'multiple_choice':
-        default:
-          questions.add({
-            "questionText": "Which statement accurately describes the role of $keyword in $title?",
-            "questionType": "multiple_choice",
-            "points": 1,
-            "explanation": "Directly based on the material: '$fact'.",
-            "options": [
-              {"optionText": fact, "isCorrect": true},
-              {"optionText": "It represents an unverified hypothesis dismissed by authorities.", "isCorrect": false},
-              {"optionText": "It is an auxiliary detail with zero bearing on overall results.", "isCorrect": false},
-              {"optionText": "It is completely superseded by legacy practices.", "isCorrect": false}
-            ],
-            "acceptableAnswers": [fact]
-          });
-          break;
-      }
+          case 'multiple_choice':
+          default:
+            points = 1;
+            switch (variantIndex % 5) {
+              case 0:
+                questionText = "Which statement accurately describes the role of $keyword in $title?";
+                break;
+              case 1:
+                questionText = "In the context of $title, what is the primary function of $keyword?";
+                break;
+              case 2:
+                questionText = "When evaluating $title, which statement regarding '$fact' is correct?";
+                break;
+              case 3:
+                questionText = "Which principle distinguishes $keyword from alternative approaches in $title?";
+                break;
+              default:
+                questionText = "According to standard conventions in $title, how does $keyword operate?";
+                break;
+            }
+            explanation = "Directly based on the material: '$fact'.";
+
+            final correctPos = (i + attempt) % 4;
+            final distractorOffset = (i * 2 + attempt) % distractorPool.length;
+            final d1 = distractorPool[distractorOffset];
+            final d2 = distractorPool[(distractorOffset + 1) % distractorPool.length];
+            final d3 = distractorPool[(distractorOffset + 2) % distractorPool.length];
+
+            final rawOpts = <Map<String, dynamic>>[];
+            int distIdx = 0;
+            final distractors = [d1, d2, d3];
+            for (int optI = 0; optI < 4; optI++) {
+              if (optI == correctPos) {
+                rawOpts.add({"optionText": fact, "isCorrect": true, "orderIndex": optI});
+              } else {
+                rawOpts.add({"optionText": distractors[distIdx++], "isCorrect": false, "orderIndex": optI});
+              }
+            }
+            options = rawOpts;
+            acceptableAnswers = [fact];
+            break;
+        }
+
+        if (seenNormalizedTexts.contains(Quiz.normalizeText(questionText))) {
+          questionText = "$questionText [Item ${i + 1}]";
+        }
+        attempt++;
+      } while (seenNormalizedTexts.contains(Quiz.normalizeText(questionText)) && attempt < 20);
+
+      seenNormalizedTexts.add(Quiz.normalizeText(questionText));
+
+      questions.add({
+        "questionText": questionText,
+        "questionType": qType,
+        "points": points,
+        "explanation": explanation,
+        "orderIndex": i,
+        "options": options,
+        "acceptableAnswers": acceptableAnswers,
+      });
     }
 
     final quizData = {

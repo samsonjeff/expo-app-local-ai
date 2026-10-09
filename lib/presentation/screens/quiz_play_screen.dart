@@ -92,12 +92,46 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
       String? textAnswer;
       int earned = 0;
 
-      if (q.questionType == QuestionType.multipleChoice || q.questionType == QuestionType.trueFalse) {
+      if (q.questionType == QuestionType.multipleChoice) {
         selectedOptId = _selectedOptionIds[q.id];
         final chosenOpt = q.options.where((o) => o.id == selectedOptId).firstOrNull;
         if (chosenOpt != null && chosenOpt.isCorrect) {
           isCorrect = true;
           earned = q.points;
+        }
+      } else if (q.questionType == QuestionType.trueFalse) {
+        selectedOptId = _selectedOptionIds[q.id];
+        QuizOption? trueOpt = q.options.where((o) {
+          final t = o.optionText.trim().toLowerCase();
+          return t == 'true' || t == 't' || t.startsWith('true');
+        }).firstOrNull;
+        QuizOption? falseOpt = q.options.where((o) {
+          final t = o.optionText.trim().toLowerCase();
+          return t == 'false' || t == 'f' || t.startsWith('false');
+        }).firstOrNull;
+
+        final isTrueCorrect = (trueOpt?.isCorrect ?? false) ||
+            q.acceptableAnswers.any((a) => a.trim().toLowerCase() == 'true');
+
+        final isTrueSelected = selectedOptId == trueOpt?.id ||
+            selectedOptId == '${q.id}_true' ||
+            selectedOptId == 'true';
+        final isFalseSelected = selectedOptId == falseOpt?.id ||
+            selectedOptId == '${q.id}_false' ||
+            selectedOptId == 'false';
+
+        if (isTrueSelected) {
+          textAnswer = 'True';
+          if (isTrueCorrect) {
+            isCorrect = true;
+            earned = q.points;
+          }
+        } else if (isFalseSelected) {
+          textAnswer = 'False';
+          if (!isTrueCorrect) {
+            isCorrect = true;
+            earned = q.points;
+          }
         }
       } else if (q.questionType == QuestionType.enumeration) {
         final list = _enumerationControllers[q.id] ?? [];
@@ -118,10 +152,9 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
         textAnswer = entered.join(', ');
       } else if (q.questionType == QuestionType.essay) {
         textAnswer = _textControllers[q.id]?.text.trim() ?? '';
-        // If student submitted a substantial response (> 15 words), award baseline score and invite self-rubric check
         final words = textAnswer.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
         if (words >= 15) {
-          earned = q.points; // Full credit provisionally, rubric shown on review
+          earned = q.points;
           isCorrect = true;
         } else if (words >= 5) {
           earned = (q.points * 0.5).round();
@@ -130,8 +163,12 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
       } else {
         // Identification / Fill in Blank
         textAnswer = _textControllers[q.id]?.text.trim() ?? '';
-        final lower = textAnswer.toLowerCase();
-        if (q.acceptableAnswers.any((ans) => ans.toLowerCase().trim() == lower)) {
+        final cleanInput = textAnswer.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
+        final matched = q.acceptableAnswers.any((ans) {
+          final cleanTarget = ans.toLowerCase().trim().replaceAll(RegExp(r'[^\w\s]'), '');
+          return cleanInput == cleanTarget || (cleanTarget.isNotEmpty && cleanInput.contains(cleanTarget));
+        });
+        if (matched) {
           isCorrect = true;
           earned = q.points;
         }
@@ -162,8 +199,12 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
       answers: answers,
     );
 
-    final attemptRepo = ref.read(attemptRepositoryProvider);
-    await attemptRepo.saveAttempt(attempt);
+    try {
+      final attemptRepo = ref.read(attemptRepositoryProvider);
+      await attemptRepo.saveAttempt(attempt);
+    } catch (e, st) {
+      debugPrint('Warning: Could not persist attempt to database: $e\n$st');
+    }
 
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -470,6 +511,7 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
           ),
           FilledButton(
             onPressed: () {
+              debugPrint('CLICKED SUBMIT & GRADE!');
               Navigator.pop(ctx);
               _submitQuiz();
             },
@@ -560,21 +602,32 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
 
       case QuestionType.trueFalse:
         final selected = _selectedOptionIds[q.id];
-        final trueOpt = q.options.where((o) => o.optionText.toLowerCase() == 'true').firstOrNull;
-        final falseOpt = q.options.where((o) => o.optionText.toLowerCase() == 'false').firstOrNull;
+        QuizOption? trueOpt = q.options.where((o) {
+          final t = o.optionText.trim().toLowerCase();
+          return t == 'true' || t == 't' || t.startsWith('true');
+        }).firstOrNull;
+        QuizOption? falseOpt = q.options.where((o) {
+          final t = o.optionText.trim().toLowerCase();
+          return t == 'false' || t == 'f' || t.startsWith('false');
+        }).firstOrNull;
 
-        final isTrueSelected = selected == trueOpt?.id;
-        final isFalseSelected = selected == falseOpt?.id;
+        final isTrueCorrect = (trueOpt?.isCorrect ?? false) ||
+            q.acceptableAnswers.any((a) => a.trim().toLowerCase() == 'true');
+
+        trueOpt ??= QuizOption(id: '${q.id}_true', optionText: 'True', isCorrect: isTrueCorrect);
+        falseOpt ??= QuizOption(id: '${q.id}_false', optionText: 'False', isCorrect: !isTrueCorrect);
+
+        final isTrueSelected = selected == trueOpt.id || selected == '${q.id}_true' || selected == 'true';
+        final isFalseSelected = selected == falseOpt.id || selected == '${q.id}_false' || selected == 'false';
+
 
         return Row(
           children: [
             Expanded(
               child: TactilePressCard(
                 onTap: () {
-                  if (trueOpt != null) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedOptionIds[q.id] = trueOpt.id);
-                  }
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedOptionIds[q.id] = trueOpt!.id);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -598,10 +651,8 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             Expanded(
               child: TactilePressCard(
                 onTap: () {
-                  if (falseOpt != null) {
-                    HapticFeedback.selectionClick();
-                    setState(() => _selectedOptionIds[q.id] = falseOpt.id);
-                  }
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedOptionIds[q.id] = falseOpt!.id);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
@@ -703,7 +754,10 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
 
   String _getCorrectAnswerText(QuizQuestion q) {
     if (q.questionType == QuestionType.multipleChoice || q.questionType == QuestionType.trueFalse) {
-      return q.options.where((o) => o.isCorrect).firstOrNull?.optionText ?? 'N/A';
+      final opt = q.options.where((o) => o.isCorrect).firstOrNull?.optionText;
+      if (opt != null && opt.isNotEmpty) return opt;
+      if (q.acceptableAnswers.isNotEmpty) return q.acceptableAnswers.first;
+      return 'N/A';
     }
     return q.acceptableAnswers.join(' / ');
   }
