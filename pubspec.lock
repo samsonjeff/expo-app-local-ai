@@ -182,6 +182,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  flutter_llama:
+    dependency: "direct main"
+    description:
+      name: flutter_llama
+      sha256: c347703791c2b27685aa324f2896bd4215ffe808daee423c040f2ad4a4ca582b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.2"
   flutter_riverpod:
     dependency: "direct main"
     description:

@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../inference/llama_bridge.dart';
 import '../inference/mock_llama_bridge.dart';
 import '../inference/model_lifecycle_manager.dart';
+import '../inference/native_flutter_llama_bridge.dart';
 import '../inference/ram_detector.dart';
 import '../models/inference.dart';
 import '../models/job.dart';
@@ -34,8 +36,15 @@ final hardwareProfileProvider = FutureProvider<HardwareProfile>((ref) async {
   return await RamDetector.detectProfile();
 });
 
-// Inference Bridge (Default to MockLlamaBridge for robust test/dev simulation)
+// Inference Bridge (Automatically chooses NativeFlutterLlamaBridge on Android/iOS, MockLlamaBridge on others or during unit tests)
 final llamaBridgeProvider = Provider<LlamaBridge>((ref) {
+  try {
+    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+      return NativeFlutterLlamaBridge();
+    }
+  } catch (_) {
+    // Platform checking error (e.g. web or test runner)
+  }
   return MockLlamaBridge();
 });
 
