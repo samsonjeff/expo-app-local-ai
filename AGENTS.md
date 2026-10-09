@@ -1,41 +1,49 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# Flutter / Dart Architecture & Engineering Rules
 
-## Expo has changed — do not trust your training data
+This is a Flutter mobile application targeting offline, on-device AI quiz generation and study tools. Prioritize mobile-first patterns, RAM safety, asynchronous execution in Dart Isolates, and cross-platform compatibility.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Tech Stack & Core Libraries
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+- **Framework**: Flutter (stable, Android-first)
+- **State Management**: `flutter_riverpod` (Riverpod 2.x+)
+- **Local AI Engine**: `llama.cpp` compiled via CMake/NDK and invoked via `dart:ffi` (or `flutter_llama`) on dedicated background threads
+- **Database**: `sqflite` + `drift` for type-safe SQLite access
+- **Document Parsing**: `syncfusion_flutter_pdf` (PDF), `archive` + XML parsing (DOCX/PPTX)
+- **Background Persistence**: `flutter_foreground_task` (foreground service to prevent OS kills during long generation tasks)
+- **Sharing & Export**: `share_plus`, `path_provider`, `printing`
 
-## Commands
+## Architecture Layers
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+1. **Presentation Layer (`lib/features/` or `lib/ui/`)**:
+   - Flutter widgets, Riverpod providers/notifiers, theme, and UI flows (Upload, Config, Streaming Progress, Review/Edit, Mock Exam, Flashcards, Results).
+   - UI thread must remain buttery 60fps at all times.
+2. **Orchestration Layer (`lib/orchestration/` or `lib/core/pipeline/`)**:
+   - Prompt templates, JSON schema validation, auto-repair.
+   - Persistent `JobQueue` (SQLite-backed, chunk-level resumable).
+   - Document chunking pipeline executed in background **Dart Isolates**.
+   - Hardware detection & RAM tier selection (`device_info_plus` / system memory).
+3. **AI Inference Layer (`lib/inference/`)**:
+   - Native bindings via `dart:ffi`.
+   - Streaming tokens via callbacks directly into Dart isolates.
+   - Memory lifecycle control: strict unload on job completion or low-memory signals (`onTrimMemory`).
+4. **Storage Layer (`lib/storage/` or `lib/data/`)**:
+   - Drift / SQLite database (quizzes, questions, attempts, SRS state).
+   - Local filesystem sandboxing (`models/`, `documents/`, `exports/`).
+
+## Essential Commands
 
 ```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
+flutter pub get                                       # install/sync dependencies
+flutter analyze                                       # static analysis / linting
+flutter test                                          # run tests
+dart run build_runner build --delete-conflicting-outputs # code generation (Drift, Riverpod, etc.)
+flutter run                                           # launch app in debug mode
 ```
 
-Run lint and typecheck before declaring any task done.
+Run `flutter analyze` and `flutter test` before declaring tasks complete.
 
-## Navigation & Routing
+## Memory & Native Safety Rules
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
-
-## Building with EAS
-
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
-
-## Rules
-
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+- **Zero UI-Thread Parsing**: Never parse large PDFs or validate large JSON schemas on the main UI isolate. Spawn a worker isolate (`Isolate.run` or `compute`).
+- **RAM Lifecycle**: On 4GB–6GB devices, ensure model weights are unloaded immediately after generation finishes or fails.
+- **Dual-Mode Bridge**: Provide a mock fallback engine for fast UI development on machines or platforms lacking native C++ GGUF runtimes.
