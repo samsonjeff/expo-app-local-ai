@@ -148,7 +148,7 @@ class _QuizConfigDialogState extends State<QuizConfigDialog> {
                       ),
                       Text(
                         widget.document != null
-                            ? 'Source: ${widget.document!.fileName} (~${widget.document!.estimatedTokens} tokens)'
+                            ? 'Source: ${widget.document!.fileName}'
                             : 'Set parameters for offline local AI generation',
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
@@ -161,22 +161,38 @@ class _QuizConfigDialogState extends State<QuizConfigDialog> {
 
             // Topic / Title Input (if not generating from document or allows renaming)
             if (widget.document == null) ...[
-              Text(
-                'Topic or Concept',
-                style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Topic or Concept / Plain Text',
+                    style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Max 300 chars',
+                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               TextField(
                 controller: _topicController,
+                maxLength: 300,
+                minLines: 3,
+                maxLines: 5,
                 decoration: InputDecoration(
-                  hintText: 'e.g., Computer Science Data Structures, Cellular Biology...',
-                  prefixIcon: const Icon(Icons.psychology_outlined),
+                  hintText: 'e.g., Computer Science Data Structures, Cellular Biology, or paste notes (max 300 chars)...',
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(bottom: 44),
+                    child: Icon(Icons.psychology_outlined),
+                  ),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   filled: true,
                   fillColor: theme.colorScheme.surfaceContainerLowest,
+                  contentPadding: const EdgeInsets.all(16),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
             ],
 
             // 1. Assessment Mode: Quiz | Exam

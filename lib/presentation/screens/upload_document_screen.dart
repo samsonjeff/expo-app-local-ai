@@ -73,7 +73,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Uploaded "$fileName" (${doc.estimatedTokens} estimated tokens)!'),
+            content: Text('Uploaded "$fileName" successfully!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -310,16 +310,17 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                         ),
                         title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
-                          '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • ~${doc.estimatedTokens} tokens',
+                          '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • Ready for Generation',
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.bolt, color: Colors.indigoAccent),
-                              tooltip: 'Generate Quiz from this Document',
+                            IconButton.filledTonal(
+                              icon: const Icon(Icons.play_arrow_rounded, color: Colors.indigoAccent, size: 22),
+                              tooltip: 'Start Quiz Generation',
                               onPressed: () => _showGenerateFromDocDialog(doc),
                             ),
+                            const SizedBox(width: 4),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                               tooltip: 'Delete Document',

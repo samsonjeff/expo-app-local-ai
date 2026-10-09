@@ -11,8 +11,6 @@ import 'quiz_play_screen.dart';
 import 'teacher_review_screen.dart';
 import 'upload_document_screen.dart';
 
-enum HomeTabFilter { all, teacher, student }
-
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -21,8 +19,20 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  HomeTabFilter _tabFilter = HomeTabFilter.all;
+  late final TextEditingController _pasteTextController;
   bool _isGenerating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pasteTextController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _pasteTextController.dispose();
+    super.dispose();
+  }
 
   void _openConfigDialog() {
     QuizConfigDialog.show(
@@ -118,108 +128,261 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Filter Header: All | Teacher Hub | Student Hub
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
+      body: quizzesAsync.when(
+        data: (quizzes) => ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          children: [
+            // Core Feature Hero: Prominent Upload PDF/Material Card
+            _buildUploadHeroCard(context),
+            const SizedBox(height: 14),
+
+            // Quick Paste Text Card (Max 300 characters)
+            _buildPasteTextCard(context),
+            const SizedBox(height: 18),
+
+            // Recent Assessments Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: SegmentedButton<HomeTabFilter>(
-                    showSelectedIcon: false,
-                    segments: const [
-                      ButtonSegment(value: HomeTabFilter.all, label: Text('All')),
-                      ButtonSegment(
-                        value: HomeTabFilter.teacher,
-                        label: Text('Teacher'),
-                        icon: Icon(Icons.edit_note),
+                Text(
+                  'Your Quizzes & Reviewers',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      ButtonSegment(
-                        value: HomeTabFilter.student,
-                        label: Text('Student'),
-                        icon: Icon(Icons.school),
-                      ),
-                    ],
-                    selected: {_tabFilter},
-                    onSelectionChanged: (set) => setState(() => _tabFilter = set.first),
-                  ),
+                ),
+                Text(
+                  '${quizzes.length} saved',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 10),
 
-          // Main Quizzes List
-          Expanded(
-            child: quizzesAsync.when(
-              data: (quizzes) {
-                if (quizzes.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.auto_stories_outlined, size: 70, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No Assessments Created Yet',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Generate customized quizzes & exams from lesson modules (.pdf, .pptx, .docx) or any topic completely offline.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(height: 24),
-                          Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 12,
-                            runSpacing: 10,
-                            children: [
-                              FilledButton.icon(
-                                onPressed: _openConfigDialog,
-                                icon: const Icon(Icons.add),
-                                label: const Text('Generate from Topic'),
-                              ),
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
-                                  );
-                                },
-                                icon: const Icon(Icons.upload_file),
-                                label: const Text('Upload Materials'),
-                              ),
-                            ],
-                          ),
-                        ],
+            if (quizzes.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.auto_stories_outlined, size: 56, color: Colors.grey.shade400),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'No Quizzes Created Yet',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                    ),
-                  );
-                }
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Upload study material above or paste plain text to generate your first offline quiz.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...quizzes.map((quiz) => _buildQuizCard(context, quiz)),
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: quizzes.length,
-                  itemBuilder: (ctx, i) {
-                    final quiz = quizzes[i];
-                    return _buildQuizCard(context, quiz);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error loading quizzes: $err')),
-            ),
-          ),
-        ],
+            const SizedBox(height: 60), // Spacing for extended FAB
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text('Error loading quizzes: $err')),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isGenerating ? null : _openConfigDialog,
         icon: const Icon(Icons.bolt),
         label: const Text('New Assessment'),
+      ),
+    );
+  }
+
+  Widget _buildUploadHeroCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 3,
+      shadowColor: theme.colorScheme.primary.withAlpha(60),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.colorScheme.primary.withAlpha(80), width: 1.5),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primaryContainer.withAlpha(140),
+              theme.colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withAlpha(90),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.upload_file_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Upload Lesson Material',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withAlpha(35),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'CORE FEATURE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Supports PDF, PPTX slides, DOCX, and TXT. Auto-extracts content for offline quizzes.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.file_open_rounded),
+                label: const Text(
+                  'Choose File from Device',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasteTextCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final currentLength = _pasteTextController.text.length;
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(120)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.text_fields_rounded, size: 20, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Or Paste Plain Text / Concept',
+                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                Text(
+                  '$currentLength/300',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: currentLength >= 300 ? Colors.red : theme.colorScheme.outline,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _pasteTextController,
+              maxLength: 300,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                hintText: 'Paste lecture notes, study definitions, or type a topic (up to 300 characters)...',
+                hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                counterText: '', // Hide default counter since we display live counter in header
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerLowest,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.bolt, size: 18),
+                label: const Text('Generate Reviewer from Text'),
+                onPressed: _pasteTextController.text.trim().isEmpty
+                    ? null
+                    : () {
+                        final text = _pasteTextController.text.trim();
+                        QuizConfigDialog.show(
+                          context: context,
+                          initialTopic: text,
+                          onStartGeneration: _startGenerationWithJob,
+                        );
+                      },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -342,64 +505,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const Divider(height: 1),
             const SizedBox(height: 10),
 
-            // Action Buttons based on Tab Filter or Unified Bar
+            // Action Buttons
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                // Student Actions
-                if (_tabFilter == HomeTabFilter.all || _tabFilter == HomeTabFilter.student) ...[
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 13),
-                    ),
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: Text(isExam ? 'Take Exam' : 'Take Quiz'),
-                    onPressed: () => _showStudentModeSheet(quiz),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13),
                   ),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 13),
-                    ),
-                    icon: const Icon(Icons.style_outlined, size: 18),
-                    label: const Text('Flashcards'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
-                      );
-                    },
+                  icon: const Icon(Icons.play_arrow, size: 18),
+                  label: Text(isExam ? 'Take Exam' : 'Take Quiz'),
+                  onPressed: () => _showStudentModeSheet(quiz),
+                ),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13),
                   ),
-                ],
-
-                // Teacher Actions
-                if (_tabFilter == HomeTabFilter.all || _tabFilter == HomeTabFilter.teacher) ...[
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 13),
-                    ),
-                    icon: const Icon(Icons.edit_note, size: 18),
-                    label: const Text('Review & Edit'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => TeacherReviewScreen(quiz: quiz)),
-                      );
-                    },
+                  icon: const Icon(Icons.style_outlined, size: 18),
+                  label: const Text('Flashcards'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
+                    );
+                  },
+                ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13),
                   ),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 13),
-                    ),
-                    icon: const Icon(Icons.print_outlined, size: 18),
-                    label: const Text('Export / Print'),
-                    onPressed: () => _showExportDialog(quiz),
+                  icon: const Icon(Icons.edit_note, size: 18),
+                  label: const Text('Review & Edit'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => TeacherReviewScreen(quiz: quiz)),
+                    );
+                  },
+                ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 13),
                   ),
-                ],
+                  icon: const Icon(Icons.print_outlined, size: 18),
+                  label: const Text('Export / Print'),
+                  onPressed: () => _showExportDialog(quiz),
+                ),
               ],
             ),
           ],
