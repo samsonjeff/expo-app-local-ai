@@ -8,7 +8,6 @@ import '../../providers/quiz_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
-import 'teacher_review_screen.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
   const UploadDocumentScreen({super.key});
@@ -126,17 +125,25 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
         Navigator.pop(context); // Dismiss progress dialog
         ref.read(quizzesProvider.notifier).refresh();
 
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!'),
-            action: SnackBarAction(
-              label: 'Review & Edit',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => TeacherReviewScreen(quiz: quiz)),
-                );
-              },
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Generated "${quiz.title}" (${quiz.totalQuestions} items)',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -145,8 +152,15 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Generation failed: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
+            duration: const Duration(seconds: 3),
+            content: Text('Generation failed: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
