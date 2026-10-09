@@ -1,6 +1,6 @@
-import { JobQueueManager } from '../src/orchestration/jobQueue.ts';
-import { RAMDetector } from '../src/inference/ramDetector.ts';
-import { QuizRepository } from '../src/storage/database/quizRepository.ts';
+import { JobQueueManager } from '../src/orchestration/jobQueue';
+import { RAMDetector } from '../src/inference/ramDetector';
+import { QuizRepository } from '../src/storage/database/quizRepository';
 
 async function main() {
   console.log('----------------------------------------------------');
