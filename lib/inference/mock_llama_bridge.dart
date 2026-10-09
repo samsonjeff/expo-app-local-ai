@@ -16,7 +16,7 @@ class MockLlamaBridge implements LlamaBridge {
     int contextSize = 4096,
     int threads = 4,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 150));
+    await Future.delayed(const Duration(milliseconds: 120));
     _isLoaded = true;
     _isStopped = false;
   }
@@ -34,7 +34,7 @@ class MockLlamaBridge implements LlamaBridge {
     // Dynamically synthesize questions reflecting the actual prompt and uploaded document content
     final responseJson = _synthesizeQuizFromPrompt(prompt);
 
-    final chunkSize = 12;
+    final chunkSize = 16;
     int tokenCount = 0;
 
     for (int i = 0; i < responseJson.length; i += chunkSize) {
@@ -50,7 +50,7 @@ class MockLlamaBridge implements LlamaBridge {
         isDone: false,
       );
 
-      await Future.delayed(const Duration(milliseconds: 8));
+      await Future.delayed(const Duration(milliseconds: 6));
     }
 
     yield GenerationChunk(
@@ -65,7 +65,38 @@ class MockLlamaBridge implements LlamaBridge {
     String description = "Quiz generated directly from your uploaded material.";
     String materialSnippet = "";
 
-    // Extract STUDY MATERIAL content if present
+    // 1. Extract Target Question Count
+    int targetCount = 5;
+    final countMatch = RegExp(r'Target Question Count:\s*(\d+)').firstMatch(prompt);
+    if (countMatch != null) {
+      targetCount = int.tryParse(countMatch.group(1)!) ?? 5;
+    }
+
+    // 2. Extract Difficulty
+    String difficulty = "medium";
+    final diffMatch = RegExp(r'Target Difficulty Level:\s*(\w+)').firstMatch(prompt);
+    if (diffMatch != null) {
+      difficulty = diffMatch.group(1)!.toLowerCase();
+    }
+
+    // 3. Extract Assessment Mode
+    String assessmentMode = "quiz";
+    final modeMatch = RegExp(r'Assessment Mode:\s*(\w+)').firstMatch(prompt);
+    if (modeMatch != null) {
+      assessmentMode = modeMatch.group(1)!.toLowerCase();
+    }
+
+    // 4. Extract Allowed Question Types
+    List<String> allowedTypes = ['multiple_choice'];
+    final typesMatch = RegExp(r'Allowed Question Types:\s*\[(.*?)\]').firstMatch(prompt);
+    if (typesMatch != null) {
+      final rawTypes = typesMatch.group(1)!.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      if (rawTypes.isNotEmpty) {
+        allowedTypes = rawTypes;
+      }
+    }
+
+    // 5. Extract STUDY MATERIAL content if present
     final materialRegex = RegExp(r'STUDY MATERIAL:\s*"""([\s\S]*?)"""');
     final match = materialRegex.firstMatch(prompt);
 
@@ -73,7 +104,6 @@ class MockLlamaBridge implements LlamaBridge {
       final raw = match.group(1)!.trim();
       if (raw.isNotEmpty) {
         materialSnippet = raw;
-        // Grab first non-empty line as title or context hint
         final lines = raw.split('\n').map((l) => l.trim()).where((l) => l.length > 3).toList();
         if (lines.isNotEmpty) {
           title = lines.first;
@@ -88,107 +118,124 @@ class MockLlamaBridge implements LlamaBridge {
       }
     }
 
-    // Parse sentences/paragraphs from document
+    if (assessmentMode == 'exam') {
+      description = "Comprehensive examination evaluating core competencies in $title.";
+    }
+
+    // Parse sentences / paragraphs from document
     List<String> keyFacts = [];
     if (materialSnippet.isNotEmpty) {
       keyFacts = materialSnippet
           .split(RegExp(r'\. |\n+'))
           .map((s) => s.replaceAll(RegExp(r'[^\w\s\-,]'), '').trim())
-          .where((s) => s.length > 20 && s.length < 160)
+          .where((s) => s.length > 20 && s.length < 180)
           .toList();
+    }
+
+    if (keyFacts.isEmpty) {
+      keyFacts = [
+        "Foundational principles and structural taxonomy of $title",
+        "Practical implementation paradigms and standard methodologies",
+        "Empirical evaluation and performance trade-offs in modern workflows",
+        "Safety guarantees, fault isolation, and state verification rules",
+        "Architectural synthesis, lifecycle management, and resource bounds",
+      ];
     }
 
     final questions = <Map<String, dynamic>>[];
 
-    if (keyFacts.length >= 2) {
-      // 1. Multiple Choice from fact 1
-      final fact1 = keyFacts[0];
-      final words1 = fact1.split(' ').where((w) => w.length > 4).toList();
-      final keyWord1 = words1.isNotEmpty ? words1.first : "the primary concept";
+    for (int i = 0; i < targetCount; i++) {
+      final qType = allowedTypes[i % allowedTypes.length];
+      final fact = keyFacts[i % keyFacts.length];
+      final words = fact.split(' ').where((w) => w.length > 4).toList();
+      final keyword = words.isNotEmpty ? words[i % words.length] : "the subject";
 
-      questions.add({
-        "questionText": "Based on the reading: What is true regarding $keyWord1?",
-        "questionType": "multiple_choice",
-        "points": 1,
-        "explanation": "Derived directly from text: '$fact1'.",
-        "options": [
-          {"optionText": fact1, "isCorrect": true},
-          {"optionText": "It is completely unrelated to the core topic discussed.", "isCorrect": false},
-          {"optionText": "It was refuted by the author in the concluding remarks.", "isCorrect": false},
-          {"optionText": "None of the above statements apply.", "isCorrect": false}
-        ],
-        "acceptableAnswers": [fact1]
-      });
+      switch (qType) {
+        case 'true_false':
+          final isTrue = (i % 2 == 0);
+          questions.add({
+            "questionText": isTrue
+                ? "According to the lesson material, '$fact'."
+                : "The material states that $keyword is universally deprecated and irrelevant.",
+            "questionType": "true_false",
+            "points": 1,
+            "explanation": isTrue
+                ? "True. This is a verified fact directly derived from the course material: '$fact'."
+                : "False. The material emphasizes that $keyword is vital rather than deprecated.",
+            "options": [
+              {"optionText": "True", "isCorrect": isTrue},
+              {"optionText": "False", "isCorrect": !isTrue}
+            ],
+            "acceptableAnswers": [isTrue ? "True" : "False"]
+          });
+          break;
 
-      // 2. True / False from fact 2
-      final fact2 = keyFacts[1];
-      questions.add({
-        "questionText": "According to the document: '$fact2'.",
-        "questionType": "true_false",
-        "points": 1,
-        "explanation": "Direct statement from the source document.",
-        "options": [
-          {"optionText": "True", "isCorrect": true},
-          {"optionText": "False", "isCorrect": false}
-        ],
-        "acceptableAnswers": ["True"]
-      });
+        case 'identification':
+          questions.add({
+            "questionText": "Identification: What term designates the concept regarding '$fact'?",
+            "questionType": "identification",
+            "points": 2,
+            "explanation": "The target term is '$keyword' based directly on: '$fact'.",
+            "options": [],
+            "acceptableAnswers": [keyword, keyword.toLowerCase(), keyword.toUpperCase()]
+          });
+          break;
 
-      // 3. Question from fact 3 if available
-      if (keyFacts.length >= 3) {
-        final fact3 = keyFacts[2];
-        final words3 = fact3.split(' ').where((w) => w.length > 5).toList();
-        final keyWord3 = words3.isNotEmpty ? words3.last : "the subject";
+        case 'enumeration':
+          questions.add({
+            "questionText": "Enumeration: Enumerate three key components or aspects related to $keyword.",
+            "questionType": "enumeration",
+            "points": 3,
+            "explanation": "Expected items derived from course context: Primary Concept, Supporting Framework, and Application Domain.",
+            "options": [],
+            "acceptableAnswers": [
+              "Primary Concept",
+              "Supporting Framework",
+              "Application Domain"
+            ]
+          });
+          break;
 
-        questions.add({
-          "questionText": "Which core principle from the text involves $keyWord3?",
-          "questionType": "multiple_choice",
-          "points": 1,
-          "explanation": "Refer to: '$fact3'.",
-          "options": [
-            {"optionText": fact3, "isCorrect": true},
-            {"optionText": "Standard baseline assumption without empirical support", "isCorrect": false},
-            {"optionText": "An outdated theory replaced by modern alternatives", "isCorrect": false},
-            {"optionText": "An unverified hypothesis mentioned in passing", "isCorrect": false}
-          ],
-          "acceptableAnswers": [fact3]
-        });
+        case 'essay':
+          questions.add({
+            "questionText": "Essay: Discuss the importance and practical implications of '$fact' in relation to $title.",
+            "questionType": "essay",
+            "points": 5,
+            "explanation": "AI Rubric Key (Total: 5 Points):\n"
+                "• Conceptual Accuracy (2 pts): Clearly explains the principle involving $keyword.\n"
+                "• Analysis & Application (2 pts): Details relevant practical use cases and implications.\n"
+                "• Coherence & Clarity (1 pt): Structured logically with appropriate terminology.\n\n"
+                "Model Answer: A comprehensive answer must reference '$fact', demonstrate how it guides decision-making, and outline real-world execution constraints.",
+            "options": [],
+            "acceptableAnswers": []
+          });
+          break;
+
+        case 'multiple_choice':
+        default:
+          questions.add({
+            "questionText": "Which statement accurately describes the role of $keyword in $title?",
+            "questionType": "multiple_choice",
+            "points": 1,
+            "explanation": "Directly based on the material: '$fact'.",
+            "options": [
+              {"optionText": fact, "isCorrect": true},
+              {"optionText": "It represents an unverified hypothesis dismissed by authorities.", "isCorrect": false},
+              {"optionText": "It is an auxiliary detail with zero bearing on overall results.", "isCorrect": false},
+              {"optionText": "It is completely superseded by legacy practices.", "isCorrect": false}
+            ],
+            "acceptableAnswers": [fact]
+          });
+          break;
       }
-    } else {
-      // Fallback if document text is very short or topic only
-      questions.addAll([
-        {
-          "questionText": "What is the primary subject addressed in '$title'?",
-          "questionType": "multiple_choice",
-          "points": 1,
-          "explanation": "The material focuses on fundamental concepts related to $title.",
-          "options": [
-            {"optionText": "Core principles and foundational analysis of $title", "isCorrect": true},
-            {"optionText": "Historical linguistics and phonetics", "isCorrect": false},
-            {"optionText": "Quantum electrodynamics", "isCorrect": false},
-            {"optionText": "Marine biology ecosystems", "isCorrect": false}
-          ],
-          "acceptableAnswers": ["Core principles and foundational analysis of $title"]
-        },
-        {
-          "questionText": "The material provides practical examples and key principles for understanding $title.",
-          "questionType": "true_false",
-          "points": 1,
-          "explanation": "True. The material introduces core ideas for study and review.",
-          "options": [
-            {"optionText": "True", "isCorrect": true},
-            {"optionText": "False", "isCorrect": false}
-          ],
-          "acceptableAnswers": ["True"]
-        }
-      ]);
     }
 
     final quizData = {
       "title": title,
       "description": description,
-      "category": "Study Material",
-      "difficulty": "medium",
+      "category": "Course Study Material",
+      "difficulty": difficulty,
+      "assessmentMode": assessmentMode,
       "questions": questions
     };
 

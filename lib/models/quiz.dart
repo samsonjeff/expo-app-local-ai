@@ -1,15 +1,16 @@
 import 'package:uuid/uuid.dart';
 
 enum QuestionType {
-  multipleChoice('multiple_choice'),
-  trueFalse('true_false'),
-  fillInBlank('fill_in_blank'),
-  enumeration('enumeration'),
-  essay('essay'),
-  identification('identification');
+  multipleChoice('multiple_choice', 'Multiple Choice'),
+  trueFalse('true_false', 'True or False'),
+  fillInBlank('fill_in_blank', 'Fill in the Blank'),
+  enumeration('enumeration', 'Enumeration'),
+  essay('essay', 'Essay (AI Rubric Key)'),
+  identification('identification', 'Identification');
 
   final String value;
-  const QuestionType(this.value);
+  final String label;
+  const QuestionType(this.value, this.label);
 
   static QuestionType fromString(String val) {
     return QuestionType.values.firstWhere(
@@ -20,18 +21,35 @@ enum QuestionType {
 }
 
 enum QuizDifficulty {
-  easy('easy'),
-  medium('medium'),
-  hard('hard'),
-  mixed('mixed');
+  easy('easy', 'Easy'),
+  medium('medium', 'Medium'),
+  hard('hard', 'Hard'),
+  mixed('mixed', 'Mixed');
 
   final String value;
-  const QuizDifficulty(this.value);
+  final String label;
+  const QuizDifficulty(this.value, this.label);
 
   static QuizDifficulty fromString(String val) {
     return QuizDifficulty.values.firstWhere(
       (e) => e.value == val || e.name == val,
       orElse: () => QuizDifficulty.medium,
+    );
+  }
+}
+
+enum AssessmentMode {
+  quiz('quiz', 'Quiz'),
+  exam('exam', 'Exam');
+
+  final String value;
+  final String label;
+  const AssessmentMode(this.value, this.label);
+
+  static AssessmentMode fromString(String val) {
+    return AssessmentMode.values.firstWhere(
+      (e) => e.value == val.toLowerCase() || e.name == val.toLowerCase(),
+      orElse: () => AssessmentMode.quiz,
     );
   }
 }
@@ -48,6 +66,20 @@ class QuizOption {
     required this.isCorrect,
     this.orderIndex = 0,
   }) : id = id ?? const Uuid().v4();
+
+  QuizOption copyWith({
+    String? id,
+    String? optionText,
+    bool? isCorrect,
+    int? orderIndex,
+  }) {
+    return QuizOption(
+      id: id ?? this.id,
+      optionText: optionText ?? this.optionText,
+      isCorrect: isCorrect ?? this.isCorrect,
+      orderIndex: orderIndex ?? this.orderIndex,
+    );
+  }
 
   factory QuizOption.fromJson(Map<String, dynamic> json, {int index = 0}) {
     return QuizOption(
@@ -88,6 +120,28 @@ class QuizQuestion {
   })  : id = id ?? const Uuid().v4(),
         options = options ?? const [],
         acceptableAnswers = acceptableAnswers ?? const [];
+
+  QuizQuestion copyWith({
+    String? id,
+    String? questionText,
+    QuestionType? questionType,
+    int? points,
+    String? explanation,
+    int? orderIndex,
+    List<QuizOption>? options,
+    List<String>? acceptableAnswers,
+  }) {
+    return QuizQuestion(
+      id: id ?? this.id,
+      questionText: questionText ?? this.questionText,
+      questionType: questionType ?? this.questionType,
+      points: points ?? this.points,
+      explanation: explanation ?? this.explanation,
+      orderIndex: orderIndex ?? this.orderIndex,
+      options: options ?? this.options,
+      acceptableAnswers: acceptableAnswers ?? this.acceptableAnswers,
+    );
+  }
 
   factory QuizQuestion.fromJson(Map<String, dynamic> json, {int index = 0}) {
     final typeStr = (json['questionType'] ?? json['type'] ?? 'multiple_choice').toString();
@@ -134,6 +188,8 @@ class Quiz {
   final String description;
   final String category;
   final QuizDifficulty difficulty;
+  final AssessmentMode assessmentMode;
+  final int passingScore; // 50 to 100 percentage
   final String? sourceDocumentId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -145,6 +201,8 @@ class Quiz {
     this.description = '',
     this.category = 'General',
     this.difficulty = QuizDifficulty.medium,
+    this.assessmentMode = AssessmentMode.quiz,
+    this.passingScore = 70,
     this.sourceDocumentId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -156,6 +214,34 @@ class Quiz {
 
   int get totalQuestions => questions.length;
   int get totalPoints => questions.fold(0, (sum, q) => sum + q.points);
+
+  Quiz copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? category,
+    QuizDifficulty? difficulty,
+    AssessmentMode? assessmentMode,
+    int? passingScore,
+    String? sourceDocumentId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<QuizQuestion>? questions,
+  }) {
+    return Quiz(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      difficulty: difficulty ?? this.difficulty,
+      assessmentMode: assessmentMode ?? this.assessmentMode,
+      passingScore: passingScore ?? this.passingScore,
+      sourceDocumentId: sourceDocumentId ?? this.sourceDocumentId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      questions: questions ?? this.questions,
+    );
+  }
 
   factory Quiz.fromJson(Map<String, dynamic> json) {
     final rawQuestions = json['questions'] as List<dynamic>? ?? [];
@@ -172,6 +258,8 @@ class Quiz {
       description: (json['description'] ?? '').toString().trim(),
       category: (json['category'] ?? 'General').toString().trim(),
       difficulty: QuizDifficulty.fromString((json['difficulty'] ?? 'medium').toString()),
+      assessmentMode: AssessmentMode.fromString((json['assessmentMode'] ?? json['assessment_mode'] ?? 'quiz').toString()),
+      passingScore: (json['passingScore'] ?? json['passing_score'] as num?)?.toInt() ?? 70,
       sourceDocumentId: json['sourceDocumentId'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
@@ -189,6 +277,8 @@ class Quiz {
     'description': description,
     'category': category,
     'difficulty': difficulty.value,
+    'assessmentMode': assessmentMode.value,
+    'passingScore': passingScore,
     'sourceDocumentId': sourceDocumentId,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),

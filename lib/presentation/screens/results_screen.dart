@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/attempt.dart';
 import '../../models/quiz.dart';
+import 'flashcard_review_screen.dart';
+import 'quiz_play_screen.dart';
 
 class ResultsScreen extends StatelessWidget {
   final Quiz quiz;
@@ -14,19 +16,36 @@ class ResultsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final passed = attempt.percentage >= 70.0;
+    final theme = Theme.of(context);
+    final passingThreshold = quiz.passingScore.toDouble();
+    final passed = attempt.percentage >= passingThreshold;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assessment Results'),
+        title: Text('${quiz.assessmentMode.label} Results'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.style_outlined),
+            tooltip: 'Review with Flashcards',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Score Summary Card
             Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              color: passed ? Colors.green.withAlpha(30) : Colors.amber.withAlpha(30),
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              color: passed ? Colors.green.withAlpha(25) : Colors.amber.withAlpha(25),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -34,23 +53,81 @@ class ResultsScreen extends StatelessWidget {
                     Icon(
                       passed ? Icons.emoji_events : Icons.refresh,
                       size: 64,
-                      color: passed ? Colors.green : Colors.amber,
+                      color: passed ? Colors.green.shade600 : Colors.amber.shade700,
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      passed ? 'Great Job!' : 'Keep Practicing!',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      passed ? 'Assessment Passed!' : 'Need More Practice',
+                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Passing Score Requirement: ${quiz.passingScore}%',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${attempt.score} / ${attempt.totalPossibleScore} Points (${attempt.percentage.toStringAsFixed(1)}%)',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: passed ? Colors.green.shade700 : Colors.amber.shade900,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${attempt.score} / ${attempt.totalPossibleScore} Points (${attempt.percentage.toStringAsFixed(1)}%)',
-                      style: const TextStyle(fontSize: 18),
+                      'Time Spent: ${attempt.timeSpentSeconds ~/ 60}m ${attempt.timeSpentSeconds % 60}s',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Quick Action Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.style_outlined),
+                    label: const Text('Flashcards'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.replay),
+                    label: const Text('Retake'),
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz)),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
+
+            // Detailed Item Review Header
+            Text(
+              'Detailed Review & AI Explanations',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            // Questions List with Explanations
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -67,51 +144,178 @@ class ResultsScreen extends StatelessWidget {
                   ),
                 );
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              answer.isCorrect ? Icons.check_circle : Icons.cancel,
-                              color: answer.isCorrect ? Colors.green : Colors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Q${i + 1}: ${q.questionText}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (q.explanation.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Explanation: ${q.explanation}',
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
+                return _buildResultQuestionCard(context, q, answer, i);
               },
             ),
             const SizedBox(height: 20),
-            FilledButton.icon(
+
+            FilledButton.tonalIcon(
               onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('Back to Home'),
+              icon: const Icon(Icons.home),
+              label: const Text('Return to Home'),
             ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildResultQuestionCard(BuildContext context, QuizQuestion q, UserAnswer answer, int index) {
+    final theme = Theme.of(context);
+    final isCorrect = answer.isCorrect;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isCorrect ? Colors.green.withAlpha(80) : Colors.red.withAlpha(80),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Question Header
+            Row(
+              children: [
+                Icon(
+                  isCorrect ? Icons.check_circle : Icons.cancel,
+                  color: isCorrect ? Colors.green : Colors.red,
+                  size: 22,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Question ${index + 1}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                Chip(
+                  label: Text(q.questionType.label, style: const TextStyle(fontSize: 10)),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+                const Spacer(),
+                Text(
+                  '${answer.earnedPoints} / ${q.points} pt',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isCorrect ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Question Text
+            Text(
+              q.questionText,
+              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+
+            // Student Answer Display
+            _buildAnswerComparison(q, answer),
+
+            // AI Explanation / Rubric Key
+            if (q.explanation.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.psychology, size: 16, color: Colors.indigo),
+                        const SizedBox(width: 6),
+                        Text(
+                          q.questionType == QuestionType.essay
+                              ? 'AI Rubric Key & Model Criteria'
+                              : 'Local AI Concept Explanation',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigo,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      q.explanation,
+                      style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurfaceVariant, height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnswerComparison(QuizQuestion q, UserAnswer answer) {
+    if (q.questionType == QuestionType.multipleChoice || q.questionType == QuestionType.trueFalse) {
+      final selectedOpt = q.options.where((o) => o.id == answer.selectedOptionId).firstOrNull;
+      final correctOpt = q.options.where((o) => o.isCorrect).firstOrNull;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Answer: ${selectedOpt?.optionText ?? "No answer selected"}',
+            style: TextStyle(
+              color: answer.isCorrect ? Colors.green.shade700 : Colors.red.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (!answer.isCorrect && correctOpt != null)
+            Text(
+              'Correct Answer: ${correctOpt.optionText}',
+              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+        ],
+      );
+    } else if (q.questionType == QuestionType.essay) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Your Written Essay Response:', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text(
+            answer.textAnswer?.isNotEmpty == true ? answer.textAnswer! : '[No essay response provided]',
+            style: const TextStyle(fontStyle: FontStyle.italic),
+          ),
+        ],
+      );
+    } else {
+      // Identification or Enumeration
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Answer: ${answer.textAnswer?.isNotEmpty == true ? answer.textAnswer! : "None"}',
+            style: TextStyle(
+              color: answer.isCorrect ? Colors.green.shade700 : Colors.red.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (!answer.isCorrect && q.acceptableAnswers.isNotEmpty)
+            Text(
+              'Acceptable Answer(s): ${q.acceptableAnswers.join(" | ")}',
+              style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+            ),
+        ],
+      );
+    }
   }
 }

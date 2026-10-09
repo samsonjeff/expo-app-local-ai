@@ -33,6 +33,8 @@ class GenerationJob {
   final String? topic;
   final int questionCount;
   final String difficulty;
+  final String assessmentMode;
+  final int passingScore;
   final List<String> questionTypes;
   final JobStatus status;
   final JobStage stage;
@@ -49,6 +51,8 @@ class GenerationJob {
     this.topic,
     this.questionCount = 10,
     this.difficulty = 'medium',
+    this.assessmentMode = 'quiz',
+    this.passingScore = 70,
     this.questionTypes = const ['multiple_choice'],
     this.status = JobStatus.pending,
     this.stage = JobStage.idle,
@@ -69,6 +73,8 @@ class GenerationJob {
     String? resultQuizId,
     String? errorMessage,
     DateTime? completedAt,
+    String? assessmentMode,
+    int? passingScore,
   }) {
     return GenerationJob(
       id: id,
@@ -76,6 +82,8 @@ class GenerationJob {
       topic: topic,
       questionCount: questionCount,
       difficulty: difficulty,
+      assessmentMode: assessmentMode ?? this.assessmentMode,
+      passingScore: passingScore ?? this.passingScore,
       questionTypes: questionTypes,
       status: status ?? this.status,
       stage: stage ?? this.stage,
@@ -94,6 +102,8 @@ class GenerationJob {
     'topic': topic,
     'questionCount': questionCount,
     'difficulty': difficulty,
+    'assessmentMode': assessmentMode,
+    'passingScore': passingScore,
     'questionTypes': questionTypes,
     'status': status.value,
     'stage': stage.name,
@@ -112,6 +122,8 @@ class GenerationJob {
       topic: json['topic'] as String?,
       questionCount: (json['questionCount'] as num?)?.toInt() ?? 10,
       difficulty: (json['difficulty'] ?? 'medium').toString(),
+      assessmentMode: (json['assessmentMode'] ?? 'quiz').toString(),
+      passingScore: (json['passingScore'] as num?)?.toInt() ?? 70,
       questionTypes: (json['questionTypes'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??

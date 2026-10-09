@@ -5,6 +5,8 @@ import '../../models/document.dart';
 import '../../models/job.dart';
 import '../../orchestration/document_parser.dart';
 import '../../providers/quiz_providers.dart';
+import '../widgets/quiz_config_dialog.dart';
+import 'teacher_review_screen.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
   const UploadDocumentScreen({super.key});
@@ -92,101 +94,15 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   }
 
   void _showGenerateFromDocDialog(DocumentMetadata doc) {
-    int questionCount = 5;
-    String difficulty = 'medium';
-
-    showModalBottomSheet(
+    QuizConfigDialog.show(
       context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 24,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Generate Quiz from Document',
-                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Source: ${doc.fileName} (~${doc.estimatedTokens} tokens)',
-                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Questions to generate:'),
-                  DropdownButton<int>(
-                    value: questionCount,
-                    items: [3, 5, 10, 15]
-                        .map((c) => DropdownMenuItem(value: c, child: Text('$c questions')))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => questionCount = val);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Difficulty level:'),
-                  DropdownButton<String>(
-                    value: difficulty,
-                    items: ['easy', 'medium', 'hard']
-                        .map((d) => DropdownMenuItem(value: d, child: Text(d.toUpperCase())))
-                        .toList(),
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => difficulty = val);
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton.icon(
-                  icon: const Icon(Icons.bolt),
-                  label: const Text('Start Offline Generation'),
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _generateQuizFromDoc(doc, questionCount, difficulty);
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      document: doc,
+      onStartGeneration: (job) => _generateQuizFromDoc(job),
     );
   }
 
-  Future<void> _generateQuizFromDoc(
-    DocumentMetadata doc,
-    int count,
-    String difficulty,
-  ) async {
+  Future<void> _generateQuizFromDoc(GenerationJob job) async {
     final queue = ref.read(jobQueueManagerProvider);
-    final job = GenerationJob(
-      documentId: doc.id,
-      topic: doc.fileName,
-      questionCount: count,
-      difficulty: difficulty,
-      questionTypes: ['multiple_choice', 'true_false', 'identification'],
-    );
 
     // Show progress dialog
     if (!mounted) return;
@@ -244,11 +160,23 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     try {
       final quiz = await queue.runQuizGeneration(job);
       if (mounted) {
-        Navigator.pop(context); // Dismiss dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!')),
-        );
+        Navigator.pop(context); // Dismiss progress dialog
         ref.read(quizzesProvider.notifier).refresh();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Generated: "${quiz.title}" with ${quiz.totalQuestions} questions!'),
+            action: SnackBarAction(
+              label: 'Review & Edit',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => TeacherReviewScreen(quiz: quiz)),
+                );
+              },
+            ),
+          ),
+        );
         Navigator.pop(context); // Return to home
       }
     } catch (e) {
