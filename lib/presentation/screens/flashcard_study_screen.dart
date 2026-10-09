@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/quiz.dart';
+import '../theme/app_theme.dart';
 import '../widgets/motion_widgets.dart';
 
 class FlashcardStudyScreen extends StatefulWidget {
@@ -165,7 +166,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Again',
                               interval: '<10m',
-                              color: Colors.red,
+                              color: AppTheme.forSrsGrade(1),
                               onTap: () => _gradeCard(1),
                             ),
                           ),
@@ -175,7 +176,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Hard',
                               interval: '1d',
-                              color: Colors.amber.shade700,
+                              color: AppTheme.forSrsGrade(2),
                               onTap: () => _gradeCard(2),
                             ),
                           ),
@@ -185,7 +186,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Good',
                               interval: '3d',
-                              color: Colors.green,
+                              color: AppTheme.forSrsGrade(3),
                               onTap: () => _gradeCard(3),
                             ),
                           ),
@@ -195,7 +196,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                               context,
                               label: 'Easy',
                               interval: '7d',
-                              color: Colors.blue,
+                              color: AppTheme.forSrsGrade(4),
                               onTap: () => _gradeCard(4),
                             ),
                           ),

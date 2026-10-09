@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/attempt.dart';
 import '../../models/quiz.dart';
+import '../theme/app_theme.dart';
 import 'flashcard_review_screen.dart';
 import 'quiz_play_screen.dart';
 
@@ -17,6 +18,7 @@ class ResultsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final passingThreshold = quiz.passingScore.toDouble();
     final passed = attempt.percentage >= passingThreshold;
 
@@ -53,7 +55,9 @@ class ResultsScreen extends StatelessWidget {
                     Icon(
                       passed ? Icons.emoji_events : Icons.refresh,
                       size: 64,
-                      color: passed ? Colors.green.shade600 : Colors.amber.shade700,
+                      color: passed
+                          ? (isDark ? AppTheme.successDark : AppTheme.success)
+                          : (isDark ? AppTheme.warningDark : AppTheme.warning),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -74,7 +78,9 @@ class ResultsScreen extends StatelessWidget {
                       '${attempt.score} / ${attempt.totalPossibleScore} Points (${attempt.percentage.toStringAsFixed(1)}%)',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: passed ? Colors.green.shade700 : Colors.amber.shade900,
+                        color: passed
+                            ? (isDark ? AppTheme.successDark : AppTheme.success)
+                            : (isDark ? AppTheme.warningDark : AppTheme.warning),
                       ),
                     ),
                     const SizedBox(height: 8),

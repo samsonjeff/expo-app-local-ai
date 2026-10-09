@@ -4,6 +4,7 @@ import '../../models/job.dart';
 import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'flashcard_review_screen.dart';
@@ -391,12 +392,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final isExam = quiz.assessmentMode == AssessmentMode.exam;
 
+    final isDark = theme.brightness == Brightness.dark;
+    final modeColor = AppTheme.forAssessmentMode(isExam, isDark: isDark);
+    final diffColor = AppTheme.forDifficulty(quiz.difficulty.value, isDark: isDark);
+    final passColor = AppTheme.forPassingScore(quiz.passingScore, isDark: isDark);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
-      elevation: 2,
+      elevation: 1,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(60)),
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withAlpha(isDark ? 50 : 90)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -417,8 +423,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isExam ? Colors.deepPurple.withAlpha(35) : Colors.indigo.withAlpha(35),
+                          color: modeColor.withAlpha(35),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: modeColor.withAlpha(60), width: 1),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -426,7 +433,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             Icon(
                               isExam ? Icons.school : Icons.quiz,
                               size: 14,
-                              color: isExam ? Colors.deepPurple : Colors.indigo,
+                              color: modeColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -434,7 +441,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isExam ? Colors.deepPurple : Colors.indigo,
+                                color: modeColor,
                               ),
                             ),
                           ],
@@ -445,12 +452,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
+                          color: diffColor.withAlpha(30),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: diffColor.withAlpha(55), width: 1),
                         ),
-                        child: Text(
-                          quiz.difficulty.label,
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              quiz.difficulty == QuizDifficulty.easy
+                                  ? Icons.signal_cellular_alt_1_bar
+                                  : (quiz.difficulty == QuizDifficulty.medium
+                                      ? Icons.signal_cellular_alt_2_bar
+                                      : Icons.signal_cellular_alt),
+                              size: 13,
+                              color: diffColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              quiz.difficulty.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: diffColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
@@ -458,12 +485,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.green.withAlpha(30),
+                          color: passColor.withAlpha(30),
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: passColor.withAlpha(55), width: 1),
                         ),
-                        child: Text(
-                          'Pass: ${quiz.passingScore}%',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.green.shade700),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              quiz.passingScore >= 75 ? Icons.verified_outlined : Icons.flag_outlined,
+                              size: 13,
+                              color: passColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Pass: ${quiz.passingScore}%',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: passColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

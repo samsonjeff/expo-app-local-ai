@@ -8,6 +8,7 @@ import '../../models/inference.dart';
 import '../../providers/quiz_providers.dart';
 import '../../storage/filesystem/file_storage_manager.dart';
 import '../../storage/filesystem/model_downloader.dart';
+import '../theme/app_theme.dart';
 
 class AiSettingsScreen extends ConsumerStatefulWidget {
   const AiSettingsScreen({super.key});
@@ -268,31 +269,37 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isLowTier ? Colors.amber.withAlpha(30) : Colors.green.withAlpha(30),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        isLowTier ? Icons.speed : Icons.rocket_launch,
-                        size: 13,
-                        color: isLowTier ? Colors.amber.shade700 : Colors.green,
+                Builder(
+                  builder: (_) {
+                    final tierColor = isLowTier ? AppTheme.warning : AppTheme.success;
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: tierColor.withAlpha(30),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: tierColor.withAlpha(55), width: 1),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isLowTier ? '4GB Tier' : 'High Tier',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isLowTier ? Colors.amber.shade700 : Colors.green,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isLowTier ? Icons.speed : Icons.rocket_launch,
+                            size: 13,
+                            color: tierColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isLowTier ? '4GB Tier' : 'High Tier',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: tierColor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -302,9 +309,11 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
               child: LinearProgressIndicator(
                 value: ramRatio.clamp(0.0, 1.0),
                 minHeight: 8,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
                 valueColor: AlwaysStoppedAnimation(
-                  ramRatio > 0.85 ? Colors.red : theme.colorScheme.primary,
+                  ramRatio > 0.85
+                      ? AppTheme.error
+                      : (ramRatio > 0.65 ? AppTheme.warning : theme.colorScheme.primary),
                 ),
               ),
             ),

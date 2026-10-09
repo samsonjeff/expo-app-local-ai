@@ -5,6 +5,7 @@ import '../../models/document.dart';
 import '../../models/job.dart';
 import '../../orchestration/document_parser.dart';
 import '../../providers/quiz_providers.dart';
+import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'teacher_review_screen.dart';
@@ -165,18 +166,8 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     }
   }
 
-  Color _colorForDocType(DocumentType type) {
-    switch (type) {
-      case DocumentType.pdf:
-        return Colors.redAccent;
-      case DocumentType.pptx:
-        return Colors.orangeAccent;
-      case DocumentType.docx:
-        return Colors.blueAccent;
-      case DocumentType.txt:
-      case DocumentType.md:
-        return Colors.teal;
-    }
+  Color _colorForDocType(DocumentType type, bool isDark) {
+    return AppTheme.forDocType(type.name, isDark: isDark);
   }
 
   @override
@@ -297,26 +288,41 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                   itemCount: docs.length,
                   itemBuilder: (ctx, i) {
                     final doc = docs[i];
-                    final color = _colorForDocType(doc.type);
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    final color = _colorForDocType(doc.type, isDark);
                     final icon = _iconForDocType(doc.type);
 
                     return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant.withAlpha(isDark ? 50 : 90),
+                        ),
+                      ),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: color.withValues(alpha: 0.15),
+                          backgroundColor: color.withAlpha(30),
                           child: Icon(icon, color: color),
                         ),
                         title: Text(doc.fileName, style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text(
                           '${(doc.fileSizeBytes / 1024).toStringAsFixed(1)} KB • Ready for Generation',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton.filledTonal(
-                              icon: const Icon(Icons.play_arrow_rounded, color: Colors.indigoAccent, size: 22),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                foregroundColor: Theme.of(context).colorScheme.primary,
+                              ),
+                              icon: const Icon(Icons.play_arrow_rounded, size: 24),
                               tooltip: 'Start Quiz Generation',
                               onPressed: () => _showGenerateFromDocDialog(doc),
                             ),
