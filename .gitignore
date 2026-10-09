@@ -37,6 +37,8 @@ ephemeral/
 .env*.local
 *.pem
 .agents/
+.agents/skills/
+skills/
 inst_user_settings.tmp
 # Local SDK
 flutter_sdk/
