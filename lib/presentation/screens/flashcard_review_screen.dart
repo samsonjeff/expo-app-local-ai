@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/quiz.dart';
+import '../widgets/motion_widgets.dart';
 
 class FlashcardReviewScreen extends StatefulWidget {
   final Quiz quiz;
@@ -212,29 +213,37 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
 
                 // Mark Need Review
                 Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange.shade700,
-                      side: BorderSide(color: Colors.orange.shade300),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: TactilePressCard(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _markNeedReview(q.id),
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.orange.shade700,
+                        side: BorderSide(color: Colors.orange.shade300),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Review Again'),
+                      onPressed: () => _markNeedReview(q.id),
                     ),
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Review Again'),
-                    onPressed: () => _markNeedReview(q.id),
                   ),
                 ),
                 const SizedBox(width: 12),
 
                 // Mark Mastered
                 Expanded(
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.green.shade600,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: TactilePressCard(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => _markKnown(q.id),
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.check_circle_outline),
+                      label: const Text('Got It!'),
+                      onPressed: () => _markKnown(q.id),
                     ),
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Got It!'),
-                    onPressed: () => _markKnown(q.id),
                   ),
                 ),
                 const SizedBox(width: 12),
