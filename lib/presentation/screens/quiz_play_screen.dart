@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/attempt.dart';
 import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
+import '../widgets/motion_widgets.dart';
 import 'results_screen.dart';
 
 class QuizPlayScreen extends ConsumerStatefulWidget {
@@ -339,13 +341,30 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Interactive Input Area (all 5 types supported)
+            // Interactive Input Area (all 5 types supported) with Animated Question Transition
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildInputArea(q),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.03, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
+                },
+                child: SingleChildScrollView(
+                  key: ValueKey<int>(_currentIndex),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInputArea(q),
 
                     // Real-time AI explanation if revealed in practice mode
                     if (isRevealed) ...[
@@ -392,8 +411,9 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
                 ),
               ),
             ),
+          ),
 
-            // Bottom Navigation Controls
+          // Bottom Navigation Controls
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
@@ -471,27 +491,46 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
             final prefix = String.fromCharCode(65 + optIdx);
             final isSelected = _selectedOptionIds[q.id] == opt.id;
 
-            return Card(
-              elevation: isSelected ? 2 : 0,
-              color: isSelected ? const Color(0xFFEEF2FF) : Colors.white,
-              margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: BorderSide(
-                  color: isSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
-                  width: isSelected ? 1.5 : 1.2,
-                ),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: () => setState(() => _selectedOptionIds[q.id] = opt.id),
-                child: Padding(
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: TactilePressCard(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedOptionIds[q.id] = opt.id);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
                   padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFFEEF2FF) : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                      width: isSelected ? 1.8 : 1.2,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withAlpha(25),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
                   child: Row(
                     children: [
-                      CircleAvatar(
-                        radius: 14,
-                        backgroundColor: isSelected ? theme.colorScheme.primary : const Color(0xFFF1F5F9),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOutCubic,
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected ? theme.colorScheme.primary : const Color(0xFFF1F5F9),
+                        ),
+                        alignment: Alignment.center,
                         child: Text(
                           prefix,
                           style: TextStyle(
@@ -524,55 +563,60 @@ class _QuizPlayScreenState extends ConsumerState<QuizPlayScreen> {
         final trueOpt = q.options.where((o) => o.optionText.toLowerCase() == 'true').firstOrNull;
         final falseOpt = q.options.where((o) => o.optionText.toLowerCase() == 'false').firstOrNull;
 
+        final isTrueSelected = selected == trueOpt?.id;
+        final isFalseSelected = selected == falseOpt?.id;
+
         return Row(
           children: [
             Expanded(
-              child: Card(
-                elevation: selected == trueOpt?.id ? 2 : 0,
-                color: selected == trueOpt?.id ? const Color(0xFFEEF2FF) : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: selected == trueOpt?.id ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
-                    width: selected == trueOpt?.id ? 1.5 : 1.2,
-                  ),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    if (trueOpt != null) setState(() => _selectedOptionIds[q.id] = trueOpt.id);
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Text('True', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: TactilePressCard(
+                onTap: () {
+                  if (trueOpt != null) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedOptionIds[q.id] = trueOpt.id);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  decoration: BoxDecoration(
+                    color: isTrueSelected ? const Color(0xFFEEF2FF) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isTrueSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                      width: isTrueSelected ? 1.8 : 1.2,
                     ),
+                  ),
+                  child: const Center(
+                    child: Text('True', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Card(
-                elevation: selected == falseOpt?.id ? 2 : 0,
-                color: selected == falseOpt?.id ? const Color(0xFFEEF2FF) : Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: selected == falseOpt?.id ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
-                    width: selected == falseOpt?.id ? 1.5 : 1.2,
-                  ),
-                ),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    if (falseOpt != null) setState(() => _selectedOptionIds[q.id] = falseOpt.id);
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
-                    child: Center(
-                      child: Text('False', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              child: TactilePressCard(
+                onTap: () {
+                  if (falseOpt != null) {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedOptionIds[q.id] = falseOpt.id);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  decoration: BoxDecoration(
+                    color: isFalseSelected ? const Color(0xFFEEF2FF) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isFalseSelected ? theme.colorScheme.primary : const Color(0xFFE2E8F0),
+                      width: isFalseSelected ? 1.8 : 1.2,
                     ),
+                  ),
+                  child: const Center(
+                    child: Text('False', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
