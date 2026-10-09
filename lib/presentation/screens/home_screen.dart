@@ -4,6 +4,7 @@ import '../../models/job.dart';
 import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
+import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'flashcard_review_screen.dart';
 import 'quiz_play_screen.dart';
@@ -39,55 +40,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dlgCtx) => Consumer(
-        builder: (context, ref, _) {
-          final jobAsync = ref.watch(activeJobStreamProvider);
-          final currentJob = jobAsync.value;
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  child: Icon(Icons.memory, size: 20, color: Theme.of(context).colorScheme.primary),
-                ),
-                const SizedBox(width: 12),
-                const Text('Local AI Generator', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LinearProgressIndicator(
-                  value: currentJob?.progress ?? 0.05,
-                  borderRadius: BorderRadius.circular(8),
-                  minHeight: 8,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  currentJob?.statusMessage ?? 'Initializing offline inference engine...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Pipeline: ${currentJob?.stage.label ?? "Preparing"}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  queue.cancelJob(job.id);
-                  Navigator.pop(dlgCtx);
-                },
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
+      builder: (dlgCtx) => GenerationProgressDialog(
+        job: job,
+        onCancel: () {
+          queue.cancelJob(job.id);
+          Navigator.pop(dlgCtx);
         },
       ),
     );
@@ -389,12 +346,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     icon: const Icon(Icons.play_arrow, size: 18),
                     label: Text(isExam ? 'Take Exam' : 'Take Quiz'),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz)),
-                      );
-                    },
+                    onPressed: () => _showStudentModeSheet(quiz),
                   ),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
@@ -479,6 +431,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               onTap: () async {
                 Navigator.pop(ctx);
                 await QuizExportService.exportAndShare(quiz, includeAnswerKey: true);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showStudentModeSheet(Quiz quiz) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              quiz.title,
+              style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Select assessment study mode:',
+              style: TextStyle(color: Theme.of(ctx).colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Colors.blueAccent,
+                child: Icon(Icons.school, color: Colors.white),
+              ),
+              title: const Text('Mock Exam', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text('Full examination test with timer. Passing threshold: ${quiz.passingScore}%.'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: false)),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Colors.green,
+                child: Icon(Icons.lightbulb, color: Colors.white),
+              ),
+              title: const Text('Practice Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Instant answer verification & offline local AI explanations.'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => QuizPlayScreen(quiz: quiz, isPracticeMode: true)),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              leading: const CircleAvatar(
+                backgroundColor: Colors.purple,
+                child: Icon(Icons.style, color: Colors.white),
+              ),
+              title: const Text('Flashcard Review', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Spaced repetition flip card study session for memory retention.'),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              tileColor: Theme.of(ctx).colorScheme.surfaceContainerLow,
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => FlashcardReviewScreen(quiz: quiz)),
+                );
               },
             ),
           ],

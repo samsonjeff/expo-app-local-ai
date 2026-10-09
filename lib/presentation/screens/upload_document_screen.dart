@@ -5,6 +5,7 @@ import '../../models/document.dart';
 import '../../models/job.dart';
 import '../../orchestration/document_parser.dart';
 import '../../providers/quiz_providers.dart';
+import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'teacher_review_screen.dart';
 
@@ -109,50 +110,11 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dlgCtx) => Consumer(
-        builder: (context, ref, _) {
-          final jobAsync = ref.watch(activeJobStreamProvider);
-          final currentJob = jobAsync.value;
-
-          return AlertDialog(
-            title: const Row(
-              children: [
-                Icon(Icons.memory, color: Colors.indigoAccent),
-                SizedBox(width: 10),
-                Text('Analyzing Document...'),
-              ],
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                LinearProgressIndicator(
-                  value: currentJob?.progress ?? 0.05,
-                  borderRadius: BorderRadius.circular(8),
-                  minHeight: 8,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  currentJob?.statusMessage ?? 'Processing document context...',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Stage: ${currentJob?.stage.label ?? "Starting"}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  queue.cancelJob(job.id);
-                  Navigator.pop(dlgCtx);
-                },
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
+      builder: (dlgCtx) => GenerationProgressDialog(
+        job: job,
+        onCancel: () {
+          queue.cancelJob(job.id);
+          Navigator.pop(dlgCtx);
         },
       ),
     );
