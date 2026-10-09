@@ -116,14 +116,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final quizzesAsync = ref.watch(quizzesProvider);
     final hwAsync = ref.watch(hardwareProfileProvider);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              'assets/MaQui-light-mode.png',
-              height: 26,
+              isDark ? 'assets/MaQui-dark-mode.png' : 'assets/MaQui-light-mode.png',
+              height: 28,
               fit: BoxFit.contain,
               errorBuilder: (_, _, _) => const Icon(Icons.school, size: 22, color: Color(0xFF4F46E5)),
             ),

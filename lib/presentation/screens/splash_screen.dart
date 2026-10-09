@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../theme/app_theme.dart';
 import 'main_navigation_shell.dart';
 import 'privacy_promise_screen.dart';
 
@@ -97,6 +98,14 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       isDark ? 'assets/MaQui-dark-mode.png' : 'assets/MaQui-light-mode.png',
                       height: 195,
                       fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.school, size: 80, color: theme.colorScheme.primary),
+                          const SizedBox(height: 16),
+                          Text('MaQui', style: AppTheme.appNameStyle(fontSize: 32)),
+                        ],
+                      ),
                     ),
                   ),
                 ),

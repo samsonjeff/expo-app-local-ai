@@ -135,6 +135,7 @@ class _PrivacyPromiseScreenState extends State<PrivacyPromiseScreen> {
                         isDark ? 'assets/MaQui-dark-mode.png' : 'assets/MaQui-light-mode.png',
                         height: 76,
                         fit: BoxFit.contain,
+                        errorBuilder: (_, _, _) => const Icon(Icons.school, size: 54, color: Color(0xFF4F46E5)),
                       ),
                     ),
                     const SizedBox(height: 16),
