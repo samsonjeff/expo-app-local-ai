@@ -45,3 +45,7 @@ skills/
 inst_user_settings.tmp
 # Local SDK
 flutter_sdk/
+
+# Built APKs & binaries
+apk/
+*.apk
