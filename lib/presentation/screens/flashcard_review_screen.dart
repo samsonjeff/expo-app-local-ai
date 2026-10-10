@@ -299,18 +299,31 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
                 Text('Tap to Flip', style: TextStyle(color: theme.colorScheme.primary, fontSize: 12)),
               ],
             ),
-            const Spacer(),
-            Center(
-              child: Text(
-                q.questionText,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  height: 1.3,
+            const SizedBox(height: 12),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      q.questionText,
+                      textAlign: TextAlign.center,
+                      style: (q.questionText.length > 120
+                              ? theme.textTheme.titleMedium
+                              : (q.questionText.length > 60
+                                  ? theme.textTheme.titleLarge
+                                  : theme.textTheme.headlineSmall))
+                          ?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(height: 12),
             if (q.questionType == QuestionType.multipleChoice) ...[
               Center(
                 child: Text(

@@ -266,59 +266,80 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
                 ),
               ],
             ),
-            const Spacer(),
-            Center(
-              child: Text(
-                content,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  height: 1.4,
-                  color: isFront
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.primary,
-                ),
-              ),
-            ),
-            const Spacer(),
-            if (!isFront)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.lightbulb_outline,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        subtext,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.4,
+            const SizedBox(height: 12),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          content,
+                          textAlign: TextAlign.center,
+                          style: (content.length > 120
+                                  ? theme.textTheme.titleMedium
+                                  : (content.length > 60
+                                      ? theme.textTheme.titleLarge
+                                      : theme.textTheme.headlineSmall))
+                              ?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            height: 1.35,
+                            color: isFront
+                                ? theme.colorScheme.onSurface
+                                : theme.colorScheme.primary,
+                          ),
                         ),
-                      ),
+                        if (!isFront &&
+                            subtext.isNotEmpty &&
+                            subtext != 'No additional explanation provided.') ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.lightbulb_outline,
+                                  size: 18,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    subtext,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ),
-              )
-            else
-              Center(
-                child: Text(
-                  subtext,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withAlpha(150),
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                isFront ? 'Tap anywhere to reveal answer' : 'Tap to return to prompt',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant.withAlpha(160),
+                ),
+              ),
+            ),
           ],
         ),
       ),
