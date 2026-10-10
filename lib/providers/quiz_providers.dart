@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../inference/llama_bridge.dart';
 import '../inference/mock_llama_bridge.dart';
 import '../inference/model_lifecycle_manager.dart';
@@ -38,8 +39,42 @@ final hardwareProfileProvider = FutureProvider<HardwareProfile>((ref) async {
   return await RamDetector.detectProfile();
 });
 
+// Force Mock Engine Setting (Persisted)
+class ForceMockEngineNotifier extends Notifier<bool> {
+  static const String _key = 'force_mock_engine';
+
+  @override
+  bool build() {
+    _loadPreference();
+    return false;
+  }
+
+  Future<void> _loadPreference() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      state = prefs.getBool(_key) ?? false;
+    } catch (_) {}
+  }
+
+  Future<void> setForceMock(bool value) async {
+    state = value;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_key, value);
+    } catch (_) {}
+  }
+}
+
+final forceMockEngineProvider = NotifierProvider<ForceMockEngineNotifier, bool>(() {
+  return ForceMockEngineNotifier();
+});
+
 // Inference Bridge (Automatically chooses NativeFlutterLlamaBridge on Android/iOS, MockLlamaBridge on web, desktop, or test runners)
 final llamaBridgeProvider = Provider<LlamaBridge>((ref) {
+  final forceMock = ref.watch(forceMockEngineProvider);
+  if (forceMock) {
+    return MockLlamaBridge();
+  }
   if (!kIsWeb) {
     try {
       if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {

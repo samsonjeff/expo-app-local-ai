@@ -165,6 +165,9 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
   Widget build(BuildContext context) {
     final docsAsync = ref.watch(documentsProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Documents & Slides', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -177,11 +180,16 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
             child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFEEF2FF),
-                      Colors.white,
-                    ],
+                  gradient: LinearGradient(
+                    colors: isDark
+                        ? const [
+                            Color(0xFF1E1B4B),
+                            Color(0xFF111827),
+                          ]
+                        : const [
+                            Color(0xFFEEF2FF),
+                            Colors.white,
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),

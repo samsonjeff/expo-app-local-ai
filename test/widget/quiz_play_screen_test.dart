@@ -8,6 +8,7 @@ import 'package:quiz_app_local_ai/presentation/screens/results_screen.dart';
 import 'package:quiz_app_local_ai/providers/quiz_providers.dart';
 import 'package:quiz_app_local_ai/storage/database/app_database.dart';
 import 'package:quiz_app_local_ai/storage/database/quiz_repository.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class _TestQuizzesNotifier extends QuizzesNotifier {
@@ -20,6 +21,8 @@ class _TestQuizzesNotifier extends QuizzesNotifier {
 
 void main() {
   setUpAll(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    SharedPreferences.setMockInitialValues({});
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   });
@@ -278,6 +281,10 @@ void main() {
         ),
       ],
     );
+
+    await tester.runAsync(() async {
+      await QuizRepository().saveQuiz(tfQuiz);
+    });
 
     await tester.pumpWidget(
       ProviderScope(

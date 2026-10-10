@@ -58,11 +58,15 @@ class ResultsScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                   side: BorderSide(
-                    color: passed ? Colors.green.withAlpha(80) : Colors.amber.withAlpha(80),
+                    color: isDark
+                        ? (passed ? const Color(0xFF22C55E).withAlpha(100) : const Color(0xFFF59E0B).withAlpha(100))
+                        : (passed ? Colors.green.withAlpha(80) : Colors.amber.withAlpha(80)),
                     width: 1.5,
                   ),
                 ),
-                color: passed ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+                color: isDark
+                    ? (passed ? const Color(0xFF064E3B).withAlpha(140) : const Color(0xFF78350F).withAlpha(140))
+                    : (passed ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB)),
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(

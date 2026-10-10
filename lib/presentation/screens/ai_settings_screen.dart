@@ -24,7 +24,6 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
   final Map<String, double> _downloadProgress = {};
   final Map<String, bool> _isDownloading = {};
   final Map<String, bool> _modelExists = {};
-  bool _mockEngineForced = false;
 
   @override
   void initState() {
@@ -197,15 +196,27 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
           ),
           const SizedBox(height: 10),
           Card(
-            child: SwitchListTile(
-              secondary: const Icon(Icons.bolt, color: Colors.amber),
-              title: const Text('Simulate AI Generation (Mock Engine)'),
-              subtitle: const Text(
-                'Generates realistic quizzes without loading heavy weights or consuming battery. Ideal for testing UI.',
-              ),
-              value: _mockEngineForced,
-              onChanged: (val) {
-                setState(() => _mockEngineForced = val);
+            child: Builder(
+              builder: (ctx) {
+                final forceMock = ref.watch(forceMockEngineProvider);
+                return SwitchListTile(
+                  secondary: const Icon(Icons.bolt, color: Colors.amber),
+                  title: const Text('Simulate AI Generation (Mock Engine)'),
+                  subtitle: const Text(
+                    'Generates realistic quizzes without loading heavy weights or consuming battery. Ideal for testing UI.',
+                  ),
+                  value: forceMock,
+                  onChanged: (val) {
+                    ref.read(forceMockEngineProvider.notifier).setForceMock(val);
+                    AppNotification.showInfo(
+                      ctx,
+                      val
+                          ? 'Mock AI simulation engine enabled'
+                          : 'Native on-device AI engine active',
+                      bottomMargin: 24,
+                    );
+                  },
+                );
               },
             ),
           ),

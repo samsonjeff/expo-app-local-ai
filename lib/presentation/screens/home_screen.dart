@@ -307,6 +307,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildUploadHeroCard(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -316,11 +317,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFFEEF2FF),
-              Colors.white,
-            ],
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [
+                    Color(0xFF1E1B4B),
+                    Color(0xFF111827),
+                  ]
+                : const [
+                    Color(0xFFEEF2FF),
+                    Colors.white,
+                  ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -486,11 +492,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildPasteTextCard(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final currentLength = _pasteTextController.text.length;
 
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: isDark ? AppTheme.cardDark : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
@@ -534,7 +541,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   borderSide: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
                 ),
                 filled: true,
-                fillColor: const Color(0xFFF8FAFC),
+                fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               ),
               onChanged: (_) => setState(() {}),
@@ -575,7 +582,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 14),
       elevation: 0,
-      color: Colors.white,
+      color: isDark ? AppTheme.cardDark : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
