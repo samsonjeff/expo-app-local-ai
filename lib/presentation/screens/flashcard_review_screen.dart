@@ -103,6 +103,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     if (_questions.isEmpty) {
       return Scaffold(
@@ -126,7 +127,8 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
           ),
         ],
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Top Progress & Mastery Stats
           Padding(
@@ -194,63 +196,137 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
           // Flip Hint
           Text(
             _isFlipped ? 'Tap card to view question prompt' : 'Tap card to flip & reveal answer key',
-            style: TextStyle(color: theme.colorScheme.outline, fontSize: 13),
+            style: TextStyle(
+              color: theme.colorScheme.outline,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 12),
 
           // Action Controls: Need Review, Known, Nav
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Previous button
-                IconButton.outlined(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _currentIndex > 0 ? _prevCard : null,
-                ),
-                const SizedBox(width: 12),
-
-                // Mark Need Review
-                Expanded(
-                  child: TactilePressCard(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => _markNeedReview(q.id),
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.orange.shade700,
-                        side: BorderSide(color: Colors.orange.shade300),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                Row(
+                  children: [
+                    // Mark Need Review
+                    Expanded(
+                      child: TactilePressCard(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _markNeedReview(q.id),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF2A1B10) : const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark ? Colors.orange.shade800 : const Color(0xFFFDBA74),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.refresh_rounded,
+                                color: isDark ? const Color(0xFFFB923C) : const Color(0xFFEA580C),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Review Again',
+                                style: TextStyle(
+                                  color: isDark ? const Color(0xFFFB923C) : const Color(0xFFC2410C),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Review Again'),
-                      onPressed: () => _markNeedReview(q.id),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
-                // Mark Mastered
-                Expanded(
-                  child: TactilePressCard(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () => _markKnown(q.id),
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.green.shade600,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                    // Mark Mastered
+                    Expanded(
+                      child: TactilePressCard(
+                        borderRadius: BorderRadius.circular(16),
+                        onTap: () => _markKnown(q.id),
+                        child: Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x3316A34A),
+                                blurRadius: 8,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Got It!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Got It!'),
-                      onPressed: () => _markKnown(q.id),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(height: 8),
 
-                // Next button
-                IconButton.outlined(
-                  icon: const Icon(Icons.arrow_forward),
-                  onPressed: _currentIndex < _questions.length - 1 ? _nextCard : null,
+                // Navigation Controls
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _currentIndex > 0 ? _prevCard : null,
+                      icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                      label: const Text('Previous', style: TextStyle(fontWeight: FontWeight.w600)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.onSurfaceVariant,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      ),
+                    ),
+                    Text(
+                      '${_currentIndex + 1} of ${_questions.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.outline,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _currentIndex < _questions.length - 1 ? _nextCard : null,
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                      iconAlignment: IconAlignment.end,
+                      label: const Text('Next', style: TextStyle(fontWeight: FontWeight.w600)),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.onSurfaceVariant,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -258,7 +334,8 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
           const SizedBox(height: 8),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildFrontCard(QuizQuestion q) {
