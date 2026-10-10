@@ -1,3 +1,4 @@
+import 'app_notification.dart';
 import 'package:flutter/material.dart';
 import '../../models/document.dart';
 import '../../models/job.dart';
@@ -71,16 +72,12 @@ class _QuizConfigDialogState extends State<QuizConfigDialog> {
   void _submit() {
     final topic = _topicController.text.trim();
     if (widget.document == null && topic.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a topic or concept.')),
-      );
+      AppNotification.showWarning(context, 'Please enter a topic or concept.', bottomMargin: 24);
       return;
     }
 
     if (_selectedQuestionTypes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select at least one question type.')),
-      );
+      AppNotification.showWarning(context, 'Please select at least one question type.', bottomMargin: 24);
       return;
     }
 

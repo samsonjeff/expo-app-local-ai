@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../models/quiz.dart';
 import '../widgets/motion_widgets.dart';
+import '../widgets/app_notification.dart';
 
 class FlashcardReviewScreen extends StatefulWidget {
   final Quiz quiz;
@@ -96,9 +97,7 @@ class _FlashcardReviewScreenState extends State<FlashcardReviewScreen> with Sing
       _questions.shuffle(Random());
       _currentIndex = 0;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Cards shuffled!'), duration: Duration(seconds: 1)),
-    );
+    AppNotification.showInfo(context, 'Cards shuffled!', duration: const Duration(seconds: 1), bottomMargin: 24);
   }
 
   @override

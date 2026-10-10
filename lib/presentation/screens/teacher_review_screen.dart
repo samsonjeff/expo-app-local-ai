@@ -4,6 +4,7 @@ import '../../models/quiz.dart';
 import '../../providers/quiz_providers.dart';
 import '../../services/quiz_export_service.dart';
 import '../widgets/motion_widgets.dart';
+import '../widgets/app_notification.dart';
 
 enum TeacherViewMode {
   questionOnly('Question Only'),
@@ -44,18 +45,11 @@ class _TeacherReviewScreenState extends ConsumerState<TeacherReviewScreen> {
       setState(() => _hasUnsavedChanges = false);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Quiz changes saved successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppNotification.showSuccess(context, 'Quiz changes saved successfully!', bottomMargin: 24);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving quiz: $e'), backgroundColor: Colors.red),
-        );
+        AppNotification.showError(context, 'Error saving quiz: $e', bottomMargin: 24);
       }
     } finally {
       if (mounted) {

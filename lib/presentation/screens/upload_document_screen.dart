@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/quiz_config_dialog.dart';
 import '../widgets/motion_widgets.dart';
+import '../widgets/app_notification.dart';
 
 class UploadDocumentScreen extends ConsumerStatefulWidget {
   const UploadDocumentScreen({super.key});
@@ -48,9 +49,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
 
       if (bytes.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not read file data. Please try another file.')),
-          );
+          AppNotification.showWarning(context, 'Could not read file data. Please try another file.');
         }
         return;
       }
@@ -64,9 +63,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
 
       if (extractedText.trim().isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No readable text could be extracted from this document.')),
-          );
+          AppNotification.showWarning(context, 'No readable text could be extracted from this document.');
         }
         return;
       }
@@ -84,18 +81,11 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       await ref.read(documentsProvider.notifier).addDocument(doc);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Uploaded "$fileName" successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppNotification.showSuccess(context, 'Uploaded "$fileName" successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading document: $e'), backgroundColor: Colors.red),
-        );
+        AppNotification.showError(context, 'Error uploading document: $e');
       }
     } finally {
       if (mounted) {
@@ -139,28 +129,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
         Navigator.pop(context); // Dismiss progress dialog
         ref.read(quizzesProvider.notifier).refresh();
 
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
-            duration: const Duration(seconds: 2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Generated "${quiz.title}" (${quiz.totalQuestions} items)',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        AppNotification.showSuccess(context, 'Generated "${quiz.title}" (${quiz.totalQuestions} items)');
         final isRootShell = ModalRoute.of(context)?.isFirst ?? true;
         if (!isRootShell && Navigator.of(context).canPop()) {
           Navigator.pop(context);
@@ -169,16 +138,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
-            duration: const Duration(seconds: 3),
-            content: Text('Generation failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppNotification.showError(context, 'Generation failed: $e');
       }
     }
   }

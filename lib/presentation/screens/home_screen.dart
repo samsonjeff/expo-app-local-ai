@@ -10,6 +10,7 @@ import '../../services/quiz_export_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/generation_progress_dialog.dart';
 import '../widgets/motion_widgets.dart';
+import '../widgets/app_notification.dart';
 import '../widgets/quiz_config_dialog.dart';
 import 'flashcard_review_screen.dart';
 import 'quiz_play_screen.dart';
@@ -66,9 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (bytes.isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Could not read file data. Please try another file.')),
-          );
+          AppNotification.showWarning(context, 'Could not read file data. Please try another file.');
         }
         return;
       }
@@ -82,9 +81,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (extractedText.trim().isEmpty) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No readable text could be extracted from this document.')),
-          );
+          AppNotification.showWarning(context, 'No readable text could be extracted from this document.');
         }
         return;
       }
@@ -102,28 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       await ref.read(documentsProvider.notifier).addDocument(doc);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
-            duration: const Duration(seconds: 2),
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Extracted "$fileName" (${doc.estimatedTokens} tokens)',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        AppNotification.showSuccess(context, 'Extracted "$fileName" (${doc.estimatedTokens} tokens)');
 
         // Smoothly open QuizConfigDialog with the loaded document!
         QuizConfigDialog.show(
@@ -134,12 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error uploading file: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppNotification.showError(context, 'Error uploading file: $e');
       }
     } finally {
       if (mounted) {
@@ -182,42 +153,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         Navigator.pop(context); // Dismiss progress dialog
         ref.read(quizzesProvider.notifier).refresh();
 
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
-            duration: const Duration(seconds: 2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Generated "${quiz.title}" (${quiz.totalQuestions} items)',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        AppNotification.showSuccess(context, 'Generated "${quiz.title}" (${quiz.totalQuestions} items)');
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Dismiss dialog
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 84, left: 24, right: 24),
-            duration: const Duration(seconds: 3),
-            content: Text('Generation failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppNotification.showError(context, 'Generation failed: $e');
       }
     } finally {
       if (mounted) {

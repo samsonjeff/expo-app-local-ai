@@ -9,6 +9,7 @@ import '../../providers/quiz_providers.dart';
 import '../../storage/filesystem/file_storage_manager.dart';
 import '../../storage/filesystem/model_downloader.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_notification.dart';
 import '../widgets/motion_widgets.dart';
 import 'privacy_promise_screen.dart';
 
@@ -69,21 +70,11 @@ class _AiSettingsScreenState extends ConsumerState<AiSettingsScreen> {
 
       if (mounted) {
         HapticFeedback.mediumImpact();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully downloaded ${model.name}!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppNotification.showSuccess(context, 'Successfully downloaded ${model.name}!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppNotification.showError(context, 'Download error: $e');
       }
     } finally {
       if (mounted) {
