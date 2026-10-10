@@ -47,7 +47,20 @@ class DocumentRepository {
 
   Future<List<DocumentMetadata>> getAllDocuments() async {
     final db = await _db;
-    final rows = await db.query('documents', orderBy: 'uploaded_at DESC');
+    final rows = await db.query(
+      'documents',
+      columns: [
+        'id',
+        'file_name',
+        'file_path',
+        'type',
+        'file_size_bytes',
+        'character_count',
+        'estimated_tokens',
+        'uploaded_at',
+      ],
+      orderBy: 'uploaded_at DESC',
+    );
     return rows.map((row) => DocumentMetadata(
       id: row['id'] as String,
       fileName: row['file_name'] as String,
@@ -59,7 +72,7 @@ class DocumentRepository {
       fileSizeBytes: row['file_size_bytes'] as int,
       characterCount: row['character_count'] as int? ?? 0,
       estimatedTokens: row['estimated_tokens'] as int? ?? 0,
-      extractedText: row['extracted_text'] as String? ?? '',
+      extractedText: '', // Lightweight for bulk lists, preventing CursorWindow 2MB OOM
       uploadedAt: DateTime.parse(row['uploaded_at'] as String),
     )).toList();
   }

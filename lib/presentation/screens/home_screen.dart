@@ -42,6 +42,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _pickAndProcessFileDirectly() async {
+    if (_isPickingFile || _isGenerating) return;
+
+    setState(() {
+      _isPickingFile = true;
+      _pickingStatus = 'Opening file selector...';
+    });
+
     try {
       final pickedFile = await FilePicker.pickFile(
         type: FileType.custom,
@@ -51,6 +58,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (pickedFile == null) return;
 
       final fileName = pickedFile.name;
+      setState(() {
+        _pickingStatus = 'Reading $fileName...';
+      });
+
       final bytes = await pickedFile.readAsBytes();
 
       if (bytes.isEmpty) {
@@ -63,7 +74,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
 
       setState(() {
-        _isPickingFile = true;
         _pickingStatus = 'Extracting $fileName...';
       });
 
@@ -356,19 +366,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildUploadHeroCard(BuildContext context) {
     final theme = Theme.of(context);
-    return TactilePressCard(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
-        );
-      },
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
-        ),
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: theme.colorScheme.primary.withAlpha(50), width: 1.5),
+      ),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
@@ -425,19 +428,33 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withAlpha(35),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'CORE FEATURE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary,
-                                letterSpacing: 0.5,
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const UploadDocumentScreen()),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary.withAlpha(25),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Library',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Icon(Icons.arrow_forward_ios, size: 10, color: theme.colorScheme.primary),
+                                ],
                               ),
                             ),
                           ),
@@ -457,56 +474,59 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: (_isPickingFile || _isGenerating) ? null : _pickAndProcessFileDirectly,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  transitionBuilder: (child, anim) => FadeTransition(
-                    opacity: anim,
-                    child: ScaleTransition(scale: anim, child: child),
+            TactilePressCard(
+              borderRadius: BorderRadius.circular(14),
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: _isPickingFile
-                      ? Row(
-                          key: const ValueKey('loading'),
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.2,
-                                color: Colors.white,
+                  onPressed: (_isPickingFile || _isGenerating) ? null : _pickAndProcessFileDirectly,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                      opacity: anim,
+                      child: ScaleTransition(scale: anim, child: child),
+                    ),
+                    child: _isPickingFile
+                        ? Row(
+                            key: const ValueKey('loading'),
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.2,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            Flexible(
-                              child: Text(
-                                _pickingStatus ?? 'Reading document...',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              const SizedBox(width: 12),
+                              Flexible(
+                                child: Text(
+                                  _pickingStatus ?? 'Reading document...',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
                               ),
-                            ),
-                          ],
-                        )
-                      : const Row(
-                          key: ValueKey('idle'),
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.file_open_rounded, size: 20),
-                            SizedBox(width: 10),
-                            Text(
-                              'Choose File from Device',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                            ),
-                          ],
-                        ),
+                            ],
+                          )
+                        : const Row(
+                            key: ValueKey('idle'),
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.file_open_rounded, size: 20),
+                              SizedBox(width: 10),
+                              Text(
+                                'Choose File from Device',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -520,9 +540,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildPasteTextCard(BuildContext context) {
     final theme = Theme.of(context);

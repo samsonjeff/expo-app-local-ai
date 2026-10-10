@@ -18,10 +18,18 @@ class UploadDocumentScreen extends ConsumerStatefulWidget {
 }
 
 class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
+  bool _isPicking = false;
   bool _isProcessing = false;
   String? _statusText;
 
   Future<void> _pickAndProcessFile() async {
+    if (_isPicking || _isProcessing) return;
+
+    setState(() {
+      _isPicking = true;
+      _statusText = 'Opening file selector...';
+    });
+
     try {
       final pickedFile = await FilePicker.pickFile(
         type: FileType.custom,
@@ -31,6 +39,11 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       if (pickedFile == null) return;
 
       final fileName = pickedFile.name;
+      setState(() {
+        _isProcessing = true;
+        _statusText = 'Reading $fileName...';
+      });
+
       final bytes = await pickedFile.readAsBytes();
 
       if (bytes.isEmpty) {
@@ -43,7 +56,6 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       }
 
       setState(() {
-        _isProcessing = true;
         _statusText = 'Extracting text from $fileName...';
       });
 
@@ -88,6 +100,7 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
     } finally {
       if (mounted) {
         setState(() {
+          _isPicking = false;
           _isProcessing = false;
           _statusText = null;
         });
@@ -148,7 +161,10 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
             ),
           ),
         );
-        Navigator.pop(context); // Return to home
+        final isRootShell = ModalRoute.of(context)?.isFirst ?? true;
+        if (!isRootShell && Navigator.of(context).canPop()) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -195,13 +211,10 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
       ),
       body: Column(
         children: [
-          // Upload Action Header Card with Tactile Press Feedback
+          // Upload Action Header Card
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TactilePressCard(
-              borderRadius: BorderRadius.circular(20),
-              onTap: _isProcessing ? null : _pickAndProcessFile,
-              child: Container(
+            child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -269,19 +282,21 @@ class _UploadDocumentScreenState extends ConsumerState<UploadDocumentScreen> {
                         ),
                       ),
                     ] else
-                      SizedBox(
-                        width: double.infinity,
-                        height: 46,
-                        child: FilledButton.icon(
-                          icon: const Icon(Icons.file_open),
-                          label: const Text('Choose File from Device'),
-                          onPressed: _pickAndProcessFile,
+                      TactilePressCard(
+                        borderRadius: BorderRadius.circular(14),
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 46,
+                          child: FilledButton.icon(
+                            icon: const Icon(Icons.file_open),
+                            label: const Text('Choose File from Device'),
+                            onPressed: (_isPicking || _isProcessing) ? null : _pickAndProcessFile,
+                          ),
                         ),
                       ),
                   ],
                 ),
               ),
-            ),
           ),
 
           // Uploaded Documents List Header
